@@ -166,7 +166,6 @@
             position: relative;
             cursor: pointer;
             border: 2px solid transparent;
-            /* タッチ操作の改善 */
             touch-action: manipulation;
         }
         .bookmark-item:hover {
@@ -204,6 +203,8 @@
         .sort-mode .bookmark-item {
             animation: shake 0.3s infinite;
             cursor: grab;
+            /* ドラッグ中はブラウザのスクロール等のジェスチャーを無効化 */
+            touch-action: none;
         }
         .sort-mode .bookmark-item:active {
             cursor: grabbing;
@@ -500,10 +501,9 @@
                     draggable: '.bookmark-item',
                     filter: '#empty-message',
                     preventOnFilter: true,
-                    // === TOUCH SUPPORT IMPROVEMENTS ===
-                    delay: 200, // 200msの長押しでドラッグ開始
-                    delayOnTouchOnly: true, // タッチ操作のみ遅延を有効化
-                    touchStartThreshold: 5, // 5px以上指が動いたらドラッグをキャンセル(スクロールと判定)
+                    // === "吸い付く"操作感のための設定 ===
+                    forceFallback: true, // ライブラリの制御を優先
+                    touchStartThreshold: 3, // 3px指が動いたらドラッグ開始
                 });
             } else {
                 if (sortableInstance) {
