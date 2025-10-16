@@ -13,7 +13,10 @@
             --card-bg: #fff;
             --hover-bg: #e9e9e9;
             --shadow-color: rgba(0, 0, 0, 0.1);
-            --primary-color: #4A90E2;
+            /* --- アクセントカラーとして扱う --- */
+            --primary-color: #4A90E2; 
+            --primary-hover-color: #3a7fd4; 
+            /* --------------------------------- */
             --danger-color: #d9534f;
             --selected-bg: #ffe0b2;
         }
@@ -109,6 +112,53 @@
         .delete-mode #confirm-delete-button {
             display: flex; /* 削除モード時に表示 */
         }
+        
+        /* --- ここからアドレスバーのスタイルを追加/修正 --- */
+
+        /* アドレスバーのコンテナ */
+        #address-bar-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            background-color: var(--card-bg);
+            border-radius: 30px; /* 全体として両端を丸く見せるための設定 */
+            box-shadow: 0 2px 4px var(--shadow-color);
+            padding: 5px;
+            transition: box-shadow 0.2s;
+        }
+        
+        /* URL入力欄 */
+        #url-input {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: none;
+            background-color: transparent;
+            color: var(--text-color);
+            font-size: 1em;
+            outline: none;
+        }
+        
+        /* 進むボタンのスタイル */
+        #go-button {
+            background-color: var(--primary-color);
+            color: white;
+            margin-left: 5px; /* 入力欄との間隔 */
+            padding: 12px;
+            width: 48px; 
+            height: 48px; 
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.2s, transform 0.2s;
+            flex-shrink: 0; 
+            margin-right: 5px; /* 右側にゆとり */
+        }
+
+        #go-button:hover {
+            background-color: var(--primary-hover-color);
+            transform: scale(1.05);
+        }
+
+        /* --- ここまでアドレスバーのスタイル --- */
 
 
         /* 追加メニュー */
@@ -334,8 +384,8 @@
         @keyframes slideIn { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
         .modal-content h2 { margin-top: 0; }
-        .modal-content input, .modal-content select, .modal-content .modal-buttons, #custom-color-picker-wrapper { margin-top: 15px; }
-        .modal-content input, .modal-content select {
+        .modal-content input, .modal-content select, .modal-content .modal-buttons, #custom-color-picker-wrapper, .settings-section { margin-top: 15px; }
+        .modal-content input:not([type="color"]), .modal-content select {
             width: 100%;
             padding: 12px;
             box-sizing: border-box;
@@ -345,6 +395,29 @@
             color: var(--text-color);
             font-size: 1em;
         }
+        
+        /* 設定セクション内のスタイル（フォルダー/アクセントカラーピッカー用） */
+        .settings-section .color-picker-group {
+             display: flex;
+             align-items: center;
+             justify-content: space-between;
+             width: 100%;
+        }
+        
+        /* フォルダ/アクセントカラーピッカーのラッパーに統一的なスタイルを適用 */
+        #custom-color-picker-wrapper, #edit-color-picker-wrapper, #accent-color-picker-wrapper {
+             padding: 15px;
+             border: 1px solid var(--hover-bg);
+             border-radius: 8px;
+        }
+        
+        #color-preview, #edit-color-preview, #accent-color-preview {
+            height: 30px;
+            border-radius: 4px;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+        }
+
         .modal-buttons {
             display: flex;
             gap: 10px;
@@ -372,7 +445,7 @@
             background-color: var(--danger-color);
             color: white;
         }
-        #reset-folder-color, #reset-edit-folder-color {
+        #reset-folder-color, #reset-edit-folder-color, #reset-accent-color { /* #reset-accent-colorを追加 */
             width: 100%; 
             margin-top: 10px;
         }
@@ -440,6 +513,15 @@
             </button>
         </div>
     </header>
+
+    <!-- ↓ここからアドレスバーを追加しました -->
+    <div id="address-bar-container">
+        <input type="text" id="url-input" placeholder="URLを入力または検索">
+        <button id="go-button" class="icon-button">
+            <span class="material-icons">arrow_forward</span>
+        </button>
+    </div>
+    <!-- ↑ここまでアドレスバーを追加しました -->
 
     <div id="add-menu">
         <div class="add-option" id="add-bookmark-option">
@@ -599,6 +681,32 @@
     <div id="settings-modal" class="modal">
         <div class="modal-content">
             <h2 data-lang-key="settings_title">設定</h2>
+            
+            <!-- ★アクセントカラー設定 (RGBスライダーを使用)★ -->
+            <div class="settings-section">
+                <div id="accent-color-picker-wrapper">
+                    <input type="hidden" id="accent-color-hidden-input" value="#4A90E2">
+                    <label data-lang-key="accent_color_setting">アクセントカラー</label>
+                    <div id="accent-color-preview"></div>
+                    <div id="accent-color-sliders">
+                         <div class="slider-container">
+                            <label for="accent-red-slider" data-lang-key="color_red">赤</label>
+                            <input type="range" id="accent-red-slider" min="0" max="255">
+                        </div>
+                        <div class="slider-container">
+                            <label for="accent-green-slider" data-lang-key="color_green">緑</label>
+                            <input type="range" id="accent-green-slider" min="0" max="255">
+                        </div>
+                        <div class="slider-container">
+                            <label for="accent-blue-slider" data-lang-key="color_blue">青</label>
+                            <input type="range" id="accent-blue-slider" min="0" max="255">
+                        </div>
+                    </div>
+                </div>
+                <button id="reset-accent-color" class="modal-button secondary" data-lang-key="reset_color">色をリセット</button>
+            </div>
+            <!-- ★アクセントカラー設定ここまで★ -->
+            
             <div class="settings-section">
                 <label for="language-select" data-lang-key="language_setting">言語</label>
                 <select id="language-select">
@@ -622,12 +730,14 @@
     document.addEventListener('DOMContentLoaded', () => {
         const DATA_STORAGE_KEY = 'myBookmarkSiteData';
         const LANGUAGE_STORAGE_KEY = 'myBookmarkSiteLanguage';
+        const ACCENT_COLOR_STORAGE_KEY = 'myBookmarkSiteAccentColor'; 
+        const DEFAULT_ACCENT_COLOR = '#4A90E2'; 
         let isDeleteMode = false;
         let isSortMode = false;
         let sortableInstance = null;
         let currentParentId = 'root';
         let currentLanguage = 'ja';
-        let currentMenuAnchor = null; // メニュー表示位置のための変数
+        let currentMenuAnchor = null; 
 
         const INITIAL_DATA = [
             { id: 'b_google', type: 'bookmark', url: 'https://www.google.co.jp', title: 'Google', parentId: 'root' },
@@ -642,18 +752,42 @@
         
         const translations = { 
             ja: { 
-                home: 'ホーム', delete_selected_items_title: '選択した項目を削除', delete_mode_title: '削除モード', sort_mode_title: '並び替え', add_title: '追加', settings_title: '設定', bookmark: 'ブックマーク', folder: 'フォルダー', empty_message_1: '右上の', empty_message_2: 'アイコンでショートカットを追加しましょう！', add_bookmark_title: 'ブックマークの追加', url_placeholder: 'URLを入力 (例: https://www.google.com)', cancel: 'キャンセル', add: '追加', create_folder_title: 'フォルダーの作成', folder_name_placeholder: 'フォルダー名', folder_color: 'フォルダーの色', color_red: '赤', color_green: '緑', color_blue: '青', emoji_placeholder: '絵文字 (例: 💻)', create: '作成', confirm_title: '確認', ok: 'OK', close: '閉じる', language_setting: '言語', data_management: 'データ管理', reset_home_screen: 'ホーム画面をリセット', alert_url_required: 'URLを入力してください。', alert_invalid_url: '無効なURLです。正しい形式で入力してください。', alert_folder_name_required: 'フォルダー名を入力してください。', alert_no_items_selected: '削除する項目を選択してください。', confirm_delete: '{count}件の項目を削除します。フォルダを削除すると、その中のアイテムもすべて削除されます。よろしいですか？', confirm_reset: 'すべてのブックマークとフォルダが削除され、初期状態に戻ります。この操作は取り消せません。よろしいですか？', reset_color: '色をリセット', edit_item_title: '項目の編集', title_placeholder: 'タイトル (省略可)', save: '保存', edit: '編集', move: '移動', move_item_title: '移動先を選択', root_folder: 'ホーム'
+                home: 'ホーム', delete_selected_items_title: '選択した項目を削除', delete_mode_title: '削除モード', sort_mode_title: '並び替え', add_title: '追加', settings_title: '設定', bookmark: 'ブックマーク', folder: 'フォルダー', empty_message_1: '右上の', empty_message_2: 'アイコンでショートカットを追加しましょう！', add_bookmark_title: 'ブックマークの追加', url_placeholder: 'URLを入力 (例: https://www.google.com)', cancel: 'キャンセル', add: '追加', create_folder_title: 'フォルダーの作成', folder_name_placeholder: 'フォルダー名', folder_color: 'フォルダーの色', color_red: '赤', color_green: '緑', color_blue: '青', emoji_placeholder: '絵文字 (例: 💻)', create: '作成', confirm_title: '確認', ok: 'OK', close: '閉じる', language_setting: '言語', data_management: 'データ管理', reset_home_screen: 'ホーム画面をリセット', alert_url_required: 'URLを入力してください。', alert_invalid_url: '無効なURLです。正しい形式で入力してください。', alert_folder_name_required: 'フォルダー名を入力してください。', alert_no_items_selected: '削除する項目を選択してください。', confirm_delete: '{count}件の項目を削除します。フォルダを削除すると、その中のアイテムもすべて削除されます。よろしいですか？', confirm_reset: 'すべてのブックマークとフォルダが削除され、初期状態に戻ります。この操作は取り消せません。よろしいですか？', reset_color: '色をリセット', edit_item_title: '項目の編集', title_placeholder: 'タイトル (省略可)', save: '保存', edit: '編集', move: '移動', move_item_title: '移動先を選択', root_folder: 'ホーム', accent_color_setting: 'アクセントカラー' 
             }, 
             en: { 
-                home: 'Home', delete_selected_items_title: 'Delete selected items', delete_mode_title: 'Delete mode', sort_mode_title: 'Sort mode', add_title: 'Add', settings_title: 'Settings', bookmark: 'Bookmark', folder: 'Folder', empty_message_1: 'Add shortcuts with the ', empty_message_2: ' icon in the top right!', add_bookmark_title: 'Add Bookmark', url_placeholder: 'Enter URL (e.g., https://www.google.com)', cancel: 'Cancel', add: 'Add', create_folder_title: 'Create Folder', folder_name_placeholder: 'Folder name', folder_color: 'Folder Color', color_red: 'Red', color_green: 'Green', color_blue: 'Blue', emoji_placeholder: 'Emoji (e.g., 💻)', create: 'Create', confirm_title: 'Confirm', ok: 'OK', close: 'Close', language_setting: 'Language', data_management: 'Data Management', reset_home_screen: 'Reset Home Screen', alert_url_required: 'Please enter a URL.', alert_invalid_url: 'Invalid URL. Please enter in the correct format.', alert_folder_name_required: 'Please enter a folder name.', alert_no_items_selected: 'Please select items to delete.', confirm_delete: 'Delete {count} item(s)? Deleting a folder will also delete all its contents. Are you sure?', confirm_reset: 'All bookmarks and folders will be deleted and reset to the initial state. This action cannot be undone. Are you sure?', reset_color: 'Reset Color', edit_item_title: 'Edit Item', title_placeholder: 'Title (Optional)', save: 'Save', edit: 'Edit', move: 'Move', move_item_title: 'Select Destination', root_folder: 'Home'
+                home: 'Home', delete_selected_items_title: 'Delete selected items', delete_mode_title: 'Delete mode', sort_mode_title: 'Sort mode', add_title: 'Add', settings_title: 'Settings', bookmark: 'Bookmark', folder: 'Folder', empty_message_1: 'Add shortcuts with the ', empty_message_2: ' icon in the top right!', add_bookmark_title: 'Add Bookmark', url_placeholder: 'Enter URL (e.g., https://www.google.com)', cancel: 'Cancel', add: 'Add', create_folder_title: 'Create Folder', folder_name_placeholder: 'Folder name', folder_color: 'Folder Color', color_red: 'Red', color_green: 'Green', color_blue: 'Blue', emoji_placeholder: 'Emoji (e.g., 💻)', create: 'Create', confirm_title: 'Confirm', ok: 'OK', close: 'Close', language_setting: 'Language', data_management: 'Data Management', reset_home_screen: 'Reset Home Screen', alert_url_required: 'Please enter a URL.', alert_invalid_url: 'Invalid URL. Please enter in the correct format.', alert_folder_name_required: 'Please enter a folder name.', alert_no_items_selected: 'Please select items to delete.', confirm_delete: 'Delete {count} item(s)? Deleting a folder will also delete all its contents. Are you sure?', confirm_reset: 'All bookmarks and folders will be deleted and reset to the initial state. This action cannot be undone. Are you sure?', reset_color: 'Reset Color', edit_item_title: 'Edit Item', title_placeholder: 'Title (Optional)', save: 'Save', edit: 'Edit', move: 'Move', move_item_title: 'Select Destination', root_folder: 'Home', accent_color_setting: 'Accent Color' 
             }, 
             ko: { 
-                home: '홈', delete_selected_items_title: '선택한 항목 삭제', delete_mode_title: '삭제 모드', sort_mode_title: '정렬 모드', add_title: '추가', settings_title: '설정', bookmark: '북마크', folder: '폴더', empty_message_1: '오른쪽 상단의 ', empty_message_2: ' 아이콘으로 바로가기를 추가하세요!', add_bookmark_title: '북마크 추가', url_placeholder: 'URL 입력 (예: https://www.google.com)', cancel: '취소', add: '추가', create_folder_title: '폴더 만들기', folder_name_placeholder: '폴더 이름', folder_color: '폴더 색상', color_red: '빨강', color_green: '초록', color_blue: '파랑', emoji_placeholder: '이모지 (예: 💻)', create: '만들기', confirm_title: '확인', ok: '확인', close: '닫기', language_setting: '언어', data_management: '데이터 관리', reset_home_screen: '홈 화면 초기화', alert_url_required: 'URL을 입력해주세요.', alert_invalid_url: '유효하지 않은 URL입니다. 올바른 형식으로 입력해주세요.', alert_folder_name_required: '폴더 이름을 입력해주세요.', alert_no_items_selected: '삭제할 항목을 선택해주세요.', confirm_delete: '{count}개의 항목을 삭제하시겠습니까? 폴더를 삭제하면 내부의 모든 항목도 삭제됩니다. 계속하시겠습니까?', confirm_reset: '모든 북마크와 폴더가 삭제되고 초기 상태로 돌아갑니다. 이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?', reset_color: '색상 초기화', edit_item_title: '항목 편집', title_placeholder: '제목 (선택 사항)', save: '저장', edit: '편집', move: '이동', move_item_title: '이동 대상 선택', root_folder: '홈'
+                home: '홈', delete_selected_items_title: '선택한 항목 삭제', delete_mode_title: '삭제 모드', sort_mode_title: '정렬 모드', add_title: '추가', settings_title: '설정', bookmark: '북마크', folder: '폴더', empty_message_1: '오른쪽 상단의 ', empty_message_2: ' 아이콘으로 바로가기를 추가하세요!', add_bookmark_title: '북마크 추가', url_placeholder: 'URL 입력 (예: https://www.google.com)', cancel: '취소', add: '추가', create_folder_title: '폴더 만들기', folder_name_placeholder: '폴더 이름', folder_color: '폴더 색상', color_red: '빨강', color_green: '초록', color_blue: '파랑', emoji_placeholder: '이모지 (예: 💻)', create: '만들기', confirm_title: '확인', ok: '확인', close: '닫기', language_setting: '언어', data_management: '데이터 관리', reset_home_screen: '홈 화면 초기화', alert_url_required: 'URL을 입력해주세요.', alert_invalid_url: '유효하지 않은 URL입니다. 올바른 형식으로 입력해주세요.', alert_folder_name_required: '폴더 이름을 입력해주세요.', alert_no_items_selected: '삭제할 항목을 선택해주세요.', confirm_delete: '{count}개의 항목을 삭제하시겠습니까? 폴더를 삭제하면 내부의 모든 항목도 삭제됩니다. 계속하시겠습니까?', confirm_reset: '모든 북마크와 폴더가 삭제되고 초기 상태로 돌아갑니다. 이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?', reset_color: '색상 초기화', edit_item_title: '항목 편집', title_placeholder: '제목 (선택 사항)', save: '저장', edit: '편집', move: '이동', move_item_title: '이동 대상 선택', root_folder: '홈', accent_color_setting: '강조 색상' 
             }, 
             zh: { 
-                home: '主页', delete_selected_items_title: '删除所选项目', delete_mode_title: '删除模式', sort_mode_title: '排序模式', add_title: '添加', settings_title: '设置', bookmark: '书签', folder: '文件夹', empty_message_1: '点击右上角的 ', empty_message_2: ' 图标添加快捷方式！', add_bookmark_title: '添加书签', url_placeholder: '输入网址 (例如 https://www.google.com)', cancel: '取消', add: '添加', create_folder_title: '创建文件夹', folder_name_placeholder: '文件夹名称', folder_color: '文件夹颜色', color_red: '红', color_green: '绿', color_blue: '蓝', emoji_placeholder: '表情符号 (例如 💻)', create: '创建', confirm_title: '确认', ok: '确定', close: '关闭', language_setting: '语言', data_management: '数据管理', reset_home_screen: '重置主屏幕', alert_url_required: '请输入网址。', alert_invalid_url: '无效的网址。请输入正确的格式。', alert_folder_name_required: '请输入文件夹名称。', alert_no_items_selected: '请选择要删除的项目。', confirm_delete: '要删除 {count} 个项目吗？删除文件夹将同时删除其所有内容。您确定吗？', confirm_reset: '所有书签和文件夹将被删除并重置为初始状态。此操作无法撤销。您确定吗？', reset_color: '重置颜色', edit_item_title: '编辑项目', title_placeholder: '标题 (可选)', save: '保存', edit: '编辑', move: '移动', move_item_title: '选择移动目标', root_folder: '主页'
+                home: '主页', delete_selected_items_title: '删除所选项目', delete_mode_title: '删除模式', sort_mode_title: '排序模式', add_title: '添加', settings_title: '设置', bookmark: '书签', folder: '文件夹', empty_message_1: '点击右上角的 ', empty_message_2: ' 图标添加快捷方式！', add_bookmark_title: '添加书签', url_placeholder: '输入网址 (例如 https://www.google.com)', cancel: '取消', add: '添加', create_folder_title: '创建文件夹', folder_name_placeholder: '文件夹名称', folder_color: '文件夹颜色', color_red: '红', color_green: '绿', color_blue: '蓝', emoji_placeholder: '表情符号 (例如 💻)', create: '创建', confirm_title: '确认', ok: '确定', close: '关闭', language_setting: '语言', data_management: '数据管理', reset_home_screen: '重置主屏幕', alert_url_required: '请输入网址。', alert_invalid_url: '无效的网址。请输入正确的格式。', alert_folder_name_required: '请输入文件夹名称。', alert_no_items_selected: '请选择要删除的项目。', confirm_delete: '要删除 {count} 个项目吗？删除文件夹将同时删除其所有内容。您确定吗？', confirm_reset: '所有书签和文件夹将被删除并重置为初始状态。此操作无法撤销。您确定吗？', reset_color: '重置颜色', edit_item_title: '编辑项目', title_placeholder: '标题 (可选)', save: '保存', edit: '编辑', move: '移动', move_item_title: '选择移动目标', root_folder: '主页', accent_color_setting: '强调颜色' 
             } 
         };
+
+        // ★色計算ユーティリティ関数★
+        function hexToRgb(hex) {
+            const bigint = parseInt(hex.slice(1), 16);
+            const r = (bigint >> 16) & 255;
+            const g = (bigint >> 8) & 255;
+            const b = bigint & 255;
+            return { r, g, b };
+        }
+
+        function rgbToHex(r, g, b) {
+            // 値が範囲外にならないように丸めてから処理
+            const h = (1 << 24) + ((Math.round(r) & 0xFF) << 16) + ((Math.round(g) & 0xFF) << 8) + (Math.round(b) & 0xFF);
+            return "#" + h.toString(16).slice(1).toUpperCase();
+        }
+
+        function darkenHexColor(hex, percent) {
+            const { r, g, b } = hexToRgb(hex);
+            const factor = 1 - (percent / 100);
+            const newR = Math.max(0, Math.floor(r * factor));
+            const newG = Math.max(0, Math.floor(g * factor));
+            const newB = Math.max(0, Math.floor(b * factor));
+            return rgbToHex(newR, newG, newB);
+        }
         
         function getLangString(key, replacements = {}) { let str = translations[currentLanguage]?.[key] || translations.en[key] || key; for (const placeholder in replacements) { str = str.replace(`{${placeholder}}`, replacements[placeholder]); } return str; }
         function applyTranslations() { document.documentElement.lang = currentLanguage; document.querySelectorAll('[data-lang-key]').forEach(el => { el.textContent = getLangString(el.dataset.langKey); }); document.querySelectorAll('[data-lang-placeholder]').forEach(el => { el.placeholder = getLangString(el.dataset.langPlaceholder); }); document.querySelectorAll('[data-lang-title]').forEach(el => { el.title = getLangString(el.dataset.langTitle); }); renderAll(); }
@@ -752,6 +886,24 @@
             updateSortModeDisplay(); 
         }
 
+        // ★アクセントカラー設定関数を更新★
+        function setAccentColor(color) {
+            const hoverColor = darkenHexColor(color, 15); 
+            document.documentElement.style.setProperty('--primary-color', color);
+            document.documentElement.style.setProperty('--primary-hover-color', hoverColor);
+            localStorage.setItem(ACCENT_COLOR_STORAGE_KEY, color);
+            
+            // フォルダカラーピッカーの設定も更新 (init()時に実行されるため、ここでは不要だが安全のため)
+            document.getElementById('accent-color-hidden-input').value = color;
+        }
+
+        // ★アクセントカラーロード関数を更新★
+        function loadAccentColor() {
+            const savedColor = localStorage.getItem(ACCENT_COLOR_STORAGE_KEY) || DEFAULT_ACCENT_COLOR;
+            setAccentColor(savedColor);
+            return savedColor;
+        }
+        
         function showItemMenu(itemId, anchorElement) {
             const menu = document.getElementById('item-menu');
             const rect = anchorElement.getBoundingClientRect();
@@ -981,7 +1133,7 @@
             }); 
         }
         
-        function resetData() { showConfirm(getLangString('confirm_reset'), () => { localStorage.removeItem(DATA_STORAGE_KEY); location.reload(); }); }
+        function resetData() { showConfirm(getLangString('confirm_reset'), () => { localStorage.removeItem(DATA_STORAGE_KEY); localStorage.removeItem(ACCENT_COLOR_STORAGE_KEY); location.reload(); }); } // ★リセット時にアクセントカラーも削除★
         function showModal(id) { document.getElementById(id).style.display = 'block'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         function hideItemMenu() { document.getElementById('item-menu').style.display = 'none'; }
@@ -1062,14 +1214,14 @@
             renderAll();
         }
 
-        // --- カラーピッカー関連の関数 ---
+        // --- カラーピッカー関連の関数 (アクセントカラーに対応するため修正) ---
 
         function initializeColorPicker(prefix = '') { 
             const redSlider = document.getElementById(prefix + 'red-slider'); 
             const greenSlider = document.getElementById(prefix + 'green-slider'); 
             const blueSlider = document.getElementById(prefix + 'blue-slider'); 
             const colorPreview = document.getElementById(prefix + 'color-preview'); 
-            const hiddenInput = document.getElementById(prefix + 'folder-color-hidden-input'); 
+            const hiddenInput = document.getElementById(prefix + 'folder-color-hidden-input') || document.getElementById(prefix + 'color-hidden-input'); // フォルダ/アクセント用
             if (!redSlider || !hiddenInput) return; 
             
             const toHex = (c) => ('0' + parseInt(c).toString(16)).slice(-2); 
@@ -1081,24 +1233,34 @@
                 const hexColor = `#${toHex(r)}${toHex(g)}${toHex(b)}`; 
                 if(colorPreview) colorPreview.style.backgroundColor = hexColor; 
                 hiddenInput.value = hexColor; 
+                
+                // アクセントカラーの場合、CSS変数とlocalStorageを更新
+                if (prefix === 'accent-') {
+                    setAccentColor(hexColor);
+                }
             } 
             
             [redSlider, greenSlider, blueSlider].forEach(slider => { slider.addEventListener('input', updateColor); }); 
         }
         
-        function resetColorPicker(hexColor = '#4A90E2', prefix = '') { 
-            const r = parseInt(hexColor.substr(1, 2), 16); 
-            const g = parseInt(hexColor.substr(3, 2), 16); 
-            const b = parseInt(hexColor.substr(5, 2), 16); 
+        function resetColorPicker(hexColor = DEFAULT_ACCENT_COLOR, prefix = '') { 
+            const rgb = hexToRgb(hexColor);
             
-            document.getElementById(prefix + 'red-slider').value = r; 
-            document.getElementById(prefix + 'green-slider').value = g; 
-            document.getElementById(prefix + 'blue-slider').value = b; 
+            document.getElementById(prefix + 'red-slider').value = rgb.r; 
+            document.getElementById(prefix + 'green-slider').value = rgb.g; 
+            document.getElementById(prefix + 'blue-slider').value = rgb.b; 
             
             const colorPreview = document.getElementById(prefix + 'color-preview');
             if(colorPreview) colorPreview.style.backgroundColor = hexColor; 
             
-            document.getElementById(prefix + 'folder-color-hidden-input').value = hexColor; 
+            const hiddenInput = document.getElementById(prefix + 'folder-color-hidden-input') || document.getElementById(prefix + 'color-hidden-input');
+            if (hiddenInput) {
+                 hiddenInput.value = hexColor;
+                 // アクセントカラーのリセットの場合は、CSS変数も更新
+                 if (prefix === 'accent-') {
+                    setAccentColor(hexColor);
+                 }
+            }
         }
 
         // --- イベントリスナーの初期化 ---
@@ -1120,6 +1282,35 @@
                     addMenu.classList.remove('expanded'); 
                 } 
             }); 
+
+            // --- アドレスバー関連のリスナーを追加 ---
+            const urlInput = document.getElementById('url-input');
+            const goButton = document.getElementById('go-button');
+            
+            function openUrl() {
+                let url = urlInput.value.trim();
+                if (!url) return;
+
+                // 簡易的なURLチェックとGoogle検索へのフォールバック
+                if (!url.match(/^https?:\/\//) && url.includes('.')) {
+                    url = 'https://' + url;
+                } else if (!url.match(/^https?:\/\//)) {
+                    // URLとして認識されない場合はGoogle検索
+                    url = 'https://www.google.com/search?q=' + encodeURIComponent(url);
+                }
+                
+                // 新しいタブで開く
+                window.open(url, '_blank');
+            }
+
+            goButton.addEventListener('click', openUrl);
+            urlInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    openUrl();
+                }
+            });
+            // --- アドレスバー関連のリスナー追加ここまで ---
             
             document.getElementById('add-button').addEventListener('click', (e) => { 
                 e.stopPropagation(); 
@@ -1133,18 +1324,18 @@
             
             document.getElementById('add-folder-option').addEventListener('click', () => { 
                 document.getElementById('add-menu').classList.remove('expanded'); 
-                resetColorPicker('#4A90E2', ''); 
+                resetColorPicker(DEFAULT_ACCENT_COLOR, ''); // フォルダのデフォルト色
                 showModal('folder-modal'); 
             }); 
 
             document.getElementById('reset-folder-color').addEventListener('click', (e) => {
                 e.preventDefault();
-                resetColorPicker('#4A90E2', ''); 
+                resetColorPicker(DEFAULT_ACCENT_COLOR, ''); 
             });
 
             document.getElementById('reset-edit-folder-color').addEventListener('click', (e) => {
                 e.preventDefault();
-                resetColorPicker('#4A90E2', 'edit-'); 
+                resetColorPicker(DEFAULT_ACCENT_COLOR, 'edit-'); 
             });
             
             // アイテムメニュー内のオプション
@@ -1163,11 +1354,28 @@
             document.getElementById('delete-toggle').addEventListener('click', toggleDeleteMode); 
             document.getElementById('sort-toggle').addEventListener('click', toggleSortMode); 
             document.getElementById('confirm-delete-button').addEventListener('click', deleteSelectedItems); 
-            document.getElementById('settings-button').addEventListener('click', () => showModal('settings-modal')); 
+            
+            // ★設定ボタンのリスナーを更新★
+            document.getElementById('settings-button').addEventListener('click', () => {
+                 const savedColor = loadAccentColor(); // 現在のアクセントカラーを再取得・適用
+                 resetColorPicker(savedColor, 'accent-'); // スライダーを現在の色で初期化
+                 showModal('settings-modal');
+            }); 
             document.getElementById('close-settings').addEventListener('click', () => closeModal('settings-modal')); 
             document.getElementById('language-select').addEventListener('change', (e) => setCurrentLanguage(e.target.value)); 
             document.getElementById('reset-data-button').addEventListener('click', resetData); 
             
+            // ★アクセントカラーリセットボタンのリスナーを追加★
+            document.getElementById('reset-accent-color').addEventListener('click', (e) => {
+                e.preventDefault();
+                resetColorPicker(DEFAULT_ACCENT_COLOR, 'accent-');
+            });
+            // ★アクセントカラー入力フィールドの変更を監視し、アクセントカラーを更新（initializeColorPicker内で処理済みだが、念のためhidden inputのchangeイベントにも対応）★
+            document.getElementById('accent-color-hidden-input').addEventListener('change', (e) => {
+                setAccentColor(e.target.value);
+            });
+
+
             document.getElementById('save-bookmark').addEventListener('click', saveBookmark); 
             document.getElementById('cancel-bookmark').addEventListener('click', () => closeModal('bookmark-modal')); 
             document.getElementById('save-folder').addEventListener('click', saveFolder); 
@@ -1187,11 +1395,14 @@
         function init() { 
             getBookmarksData(); 
 
+            loadAccentColor(); 
+
             const savedLang = localStorage.getItem(LANGUAGE_STORAGE_KEY) || (['ja', 'en', 'ko', 'zh'].includes(navigator.language.split('-')[0]) ? navigator.language.split('-')[0] : 'en'); 
             setCurrentLanguage(savedLang); 
             
             initializeColorPicker(''); 
             initializeColorPicker('edit-'); 
+            initializeColorPicker('accent-'); // ★アクセントカラー用のカラーピッカーも初期化★
             
             initializeEventListeners(); 
         }
