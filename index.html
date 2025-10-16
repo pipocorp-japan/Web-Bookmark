@@ -155,6 +155,7 @@
             border-radius: 8px;
             box-shadow: 0 2px 4px var(--shadow-color);
             padding: 15px;
+            padding-top: 5px; /* ボタンのために調整 */
             text-align: center;
             text-decoration: none;
             color: inherit;
@@ -176,6 +177,33 @@
             /* フォルダの背景がカスタム色になるため、文字色は白に固定 */
             color: #fff;
         }
+
+        /* 編集ボタン（3点リーダー） */
+        .edit-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: inherit;
+            padding: 5px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+            z-index: 10;
+        }
+        .bookmark-item[data-type="folder"] .edit-button {
+             color: #fff; /* フォルダは背景色が変わるため白にする */
+        }
+        .edit-button:hover {
+            opacity: 1.0;
+        }
+        /* 削除モード中は非表示、並び替えモード中は無効化 */
+        .delete-mode .edit-button,
+        .sort-mode .edit-button {
+            display: none;
+        }
+
 
         /* 削除モード */
         .delete-mode .select-checkbox {
@@ -226,6 +254,10 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            margin-top: 15px; /* 編集ボタンのために下にずらす */
+        }
+        .bookmark-item[data-type="folder"] .favicon-container {
+             margin-top: 5px; /* フォルダは元々アイコンがないので調整 */
         }
         .favicon-container img {
             width: 100%;
@@ -319,7 +351,7 @@
             background-color: var(--danger-color);
             color: white;
         }
-        #reset-folder-color {
+        #reset-folder-color, #reset-edit-folder-color {
             width: 100%; 
             margin-top: 10px;
         }
@@ -329,6 +361,12 @@
         .edit-type-folder .bookmark-settings {
             display: none;
         }
+        /* 編集モーダルのために、カラーピッカーのIDを編集モーダル内にも追加 */
+        #edit-modal #edit-color-picker-wrapper #edit-color-preview,
+        #edit-modal #edit-color-picker-wrapper #edit-color-sliders {
+            /* スタイルは通常のカラーピッカーと同じ */
+        }
+
 
         #confirm-modal .modal-body {
             padding: 20px 0;
@@ -555,7 +593,6 @@
             } 
         };
         
-        // ... (省略: ユーティリティ関数) ...
         function getLangString(key, replacements = {}) { let str = translations[currentLanguage]?.[key] || translations.en[key] || key; for (const placeholder in replacements) { str = str.replace(`{${placeholder}}`, replacements[placeholder]); } return str; }
         function applyTranslations() { document.documentElement.lang = currentLanguage; document.querySelectorAll('[data-lang-key]').forEach(el => { el.textContent = getLangString(el.dataset.langKey); }); document.querySelectorAll('[data-lang-placeholder]').forEach(el => { el.placeholder = getLangString(el.dataset.langPlaceholder); }); document.querySelectorAll('[data-lang-title]').forEach(el => { el.title = getLangString(el.dataset.langTitle); }); renderAll(); }
         function setCurrentLanguage(lang) { currentLanguage = lang; localStorage.setItem(LANGUAGE_STORAGE_KEY, lang); document.getElementById('language-select').value = lang; applyTranslations(); }
@@ -573,7 +610,6 @@
             const allData = getBookmarksData(); 
             const itemsToDisplay = allData.filter(item => item.parentId === currentParentId); 
             
-            // フォルダを前に表示
             itemsToDisplay.sort((a, b) => {
                 if (a.type === 'folder' && b.type !== 'folder') return -1;
                 if (a.type !== 'folder' && b.type === 'folder') return 1;
@@ -587,7 +623,21 @@
                 itemElement.dataset.id = item.id; 
                 itemElement.dataset.type = item.type; 
                 
-                // ブックマークまたはフォルダクリック時の処理
+                // --- 編集ボタンの追加 ---
+                const editButton = document.createElement('button');
+                editButton.className = 'edit-button';
+                editButton.innerHTML = '<span class="material-icons" style="font-size: 18px;">more_vert</span>';
+                editButton.title = getLangString('edit_item_title');
+                editButton.addEventListener('click', (e) => {
+                    e.stopPropagation(); // アイテムのクリックイベントを防止
+                    if (!isDeleteMode && !isSortMode) {
+                        showEditModal(item.id);
+                    }
+                });
+                itemElement.appendChild(editButton);
+                // -------------------------
+
+                // ブックマークまたはフォルダクリック時の処理 (編集ボタンのクリックイベントは上に追加)
                 itemElement.addEventListener('click', (e) => { 
                     if (isSortMode) { 
                         e.preventDefault(); 
@@ -599,28 +649,18 @@
                         checkbox.checked = !checkbox.checked; 
                         itemElement.classList.toggle('selected', checkbox.checked); 
                     } else if (item.type === 'folder') { 
-                        e.preventDefault(); 
-                        setCurrentParentId(item.id); 
+                        // フォルダに移動
+                        if (!e.target.classList.contains('edit-button') && !e.target.closest('.edit-button')) {
+                            e.preventDefault(); 
+                            setCurrentParentId(item.id); 
+                        }
                     } else if (item.type === 'bookmark') { 
-                        window.open(item.url, '_blank'); 
+                        // リンクを開く
+                        if (!e.target.classList.contains('edit-button') && !e.target.closest('.edit-button')) {
+                            window.open(item.url, '_blank'); 
+                        }
                     } 
                 }); 
-                
-                // ダブルクリック/長押しで編集モーダルを開く
-                itemElement.addEventListener('dblclick', (e) => {
-                    if (!isDeleteMode && !isSortMode) {
-                        e.preventDefault();
-                        showEditModal(item.id);
-                    }
-                });
-
-                // スマートフォンでの長押しを考慮して、コンテキストメニュー表示を防止
-                itemElement.addEventListener('contextmenu', (e) => {
-                    if (!isDeleteMode && !isSortMode) {
-                        e.preventDefault();
-                        showEditModal(item.id);
-                    }
-                });
                 
                 let contentHTML = ''; 
                 if (item.type === 'bookmark') { 
@@ -642,7 +682,7 @@
                     <div class="bookmark-title" style="font-weight: bold;">${item.name}</div> 
                     `; 
                 } 
-                itemElement.innerHTML = contentHTML; 
+                itemElement.insertAdjacentHTML('beforeend', contentHTML); 
                 container.insertBefore(itemElement, emptyMessage); 
             }); 
             updateDeleteModeDisplay(); 
@@ -714,7 +754,7 @@
                 sortableInstance = new Sortable(container, {
                     animation: 150,
                     draggable: '.bookmark-item',
-                    filter: '#empty-message',
+                    filter: '.edit-button, #empty-message', // 編集ボタンはドラッグ対象外
                     preventOnFilter: true,
                     forceFallback: true,
                     touchStartThreshold: 3,
@@ -858,7 +898,6 @@
             const modal = document.getElementById('edit-modal');
             modal.className = 'modal'; // クラスをリセット
 
-            // 共通フィールドの設定
             document.getElementById('edit-id-input').value = item.id;
             document.getElementById('edit-type-input').value = item.type;
             document.getElementById('edit-title').textContent = getLangString('edit_item_title');
@@ -871,7 +910,7 @@
                 modal.classList.add('edit-type-folder');
                 document.getElementById('edit-folder-name-input').value = item.name || '';
                 document.getElementById('edit-folder-emoji-input').value = item.emoji || '';
-                resetColorPicker(item.color, 'edit-'); // 編集用のカラーピッカーに現在の色をロード
+                resetColorPicker(item.color, 'edit-'); 
             }
 
             showModal('edit-modal');
@@ -901,7 +940,7 @@
                     currentItem.title = newTitle;
                     if (currentItem.url !== url) {
                         currentItem.url = url;
-                        currentItem.favicon = getFaviconUrl(url); // URLが変わったらファビコンも更新
+                        currentItem.favicon = getFaviconUrl(url); 
                     }
                 } catch (e) {
                     showCustomAlert(getLangString('alert_invalid_url'));
@@ -931,7 +970,7 @@
             const blueSlider = document.getElementById(prefix + 'blue-slider'); 
             const colorPreview = document.getElementById(prefix + 'color-preview'); 
             const hiddenInput = document.getElementById(prefix + 'folder-color-hidden-input'); 
-            if (!redSlider || !hiddenInput) return; // 要素が存在しない場合は何もしない
+            if (!redSlider || !hiddenInput) return; 
             
             const toHex = (c) => ('0' + parseInt(c).toString(16)).slice(-2); 
             
@@ -977,17 +1016,15 @@
             
             document.getElementById('add-folder-option').addEventListener('click', () => { 
                 document.getElementById('add-menu').classList.remove('expanded'); 
-                resetColorPicker('#4A90E2', ''); // 作成モーダルの色をリセット
+                resetColorPicker('#4A90E2', ''); 
                 showModal('folder-modal'); 
             }); 
 
-            // 作成モーダルの色リセットボタン
             document.getElementById('reset-folder-color').addEventListener('click', (e) => {
                 e.preventDefault();
                 resetColorPicker('#4A90E2', ''); 
             });
 
-            // 編集モーダルの色リセットボタン
             document.getElementById('reset-edit-folder-color').addEventListener('click', (e) => {
                 e.preventDefault();
                 resetColorPicker('#4A90E2', 'edit-'); 
@@ -1001,14 +1038,13 @@
             document.getElementById('language-select').addEventListener('change', (e) => setCurrentLanguage(e.target.value)); 
             document.getElementById('reset-data-button').addEventListener('click', resetData); 
             
-            // モーダル保存/キャンセル
             document.getElementById('save-bookmark').addEventListener('click', saveBookmark); 
             document.getElementById('cancel-bookmark').addEventListener('click', () => closeModal('bookmark-modal')); 
             document.getElementById('save-folder').addEventListener('click', saveFolder); 
             document.getElementById('cancel-folder').addEventListener('click', () => closeModal('folder-modal')); 
             
-            document.getElementById('save-edit').addEventListener('click', saveEdit); // 編集保存
-            document.getElementById('cancel-edit').addEventListener('click', () => closeModal('edit-modal')); // 編集キャンセル
+            document.getElementById('save-edit').addEventListener('click', saveEdit); 
+            document.getElementById('cancel-edit').addEventListener('click', () => closeModal('edit-modal')); 
             
             window.addEventListener('click', (event) => { 
                 if (event.target.classList.contains('modal')) { 
@@ -1032,7 +1068,6 @@
             const savedLang = localStorage.getItem(LANGUAGE_STORAGE_KEY) || (['ja', 'en', 'ko', 'zh'].includes(navigator.language.split('-')[0]) ? navigator.language.split('-')[0] : 'en'); 
             setCurrentLanguage(savedLang); 
             
-            // 作成と編集、両方のカラーピッカーを初期化
             initializeColorPicker(''); 
             initializeColorPicker('edit-'); 
             
