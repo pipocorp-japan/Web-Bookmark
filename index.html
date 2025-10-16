@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Bookmark</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f4f7f8;
+            --text-color: #333;
+            --card-bg: #fff;
+            --hover-bg: #e9e9e9;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --primary-color: #4A90E2;
+            --danger-color: #d9534f;
+            --selected-bg: #ffe0b2;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #1a1a1a;
+                --text-color: #f0f0f0;
+                --card-bg: #2b2b2b;
+                --hover-bg: #444;
+                --shadow-color: rgba(0, 0, 0, 0.5);
+                --selected-bg: #5a4a2e;
+            }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* ヘッダー */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        
+        #header-left {
+            display: flex;
+            align-items: center;
+            flex-grow: 1;
+            min-width: 200px;
+        }
+
+        #header-right {
+            display: flex;
+            align-items: center;
+        }
+
+        /* パンくずリスト */
+        #breadcrumbs {
+            display: flex;
+            align-items: center;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+        #breadcrumbs a {
+            color: var(--primary-color);
+            text-decoration: none;
+            cursor: pointer;
+        }
+        #breadcrumbs a:hover {
+            text-decoration: underline;
+        }
+        #breadcrumbs span {
+            margin: 0 8px;
+            color: #888;
+        }
+
+
+        .icon-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            margin-left: 10px;
+            padding: 10px;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .icon-button:hover {
+            background-color: var(--hover-bg);
+        }
+        .material-icons {
+            font-size: 24px;
+        }
+
+        /* 削除確認ボタン */
+        #confirm-delete-button {
+            display: none; /* 初期は非表示 */
+            color: var(--danger-color);
+        }
+        .delete-mode #confirm-delete-button {
+            display: flex; /* 削除モード時に表示 */
+        }
+
+
+        /* 追加メニュー */
+        #add-menu {
+            overflow: hidden;
+            height: 0;
+            opacity: 0;
+            transition: height 0.3s ease, opacity 0.3s ease, margin-top 0.3s ease;
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 4px 8px var(--shadow-color);
+            margin-bottom: 20px;
+        }
+        #add-menu.expanded {
+            height: 60px;
+            opacity: 1;
+            padding: 10px;
+            margin-top: 10px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        .add-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        .add-option:hover {
+            background-color: var(--hover-bg);
+        }
+
+        /* ブックマークグリッド */
+        #bookmarks-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 20px;
+        }
+        .bookmark-item {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px var(--shadow-color);
+            padding: 15px;
+            text-align: center;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .bookmark-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px var(--shadow-color);
+        }
+        .bookmark-item[data-type="folder"] {
+            color: #fff;
+        }
+
+        /* 削除モード */
+        .delete-mode .select-checkbox {
+            display: block;
+        }
+        .bookmark-item.selected {
+            border-color: var(--primary-color);
+            background-color: var(--selected-bg);
+        }
+        .select-checkbox {
+            display: none;
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .favicon-container {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .favicon-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .bookmark-title {
+            font-size: 14px;
+            width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #empty-message {
+            text-align: center;
+            grid-column: 1 / -1;
+            padding: 50px 20px;
+            color: #888;
+            font-size: 1.2em;
+        }
+        #empty-message .material-icons {
+             font-size: inherit;
+             vertical-align: bottom;
+        }
+
+        /* モーダル */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.6);
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            margin: 10% auto;
+            padding: 25px;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px var(--shadow-color);
+            color: var(--text-color);
+            animation: slideIn 0.3s;
+        }
+        @keyframes slideIn { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .modal-content h2 { margin-top: 0; }
+        .modal-content input, .modal-content .modal-buttons, #custom-color-picker-wrapper { margin-top: 15px; }
+        .modal-content input {
+            width: 100%;
+            padding: 12px;
+            box-sizing: border-box;
+            border-radius: 6px;
+            border: 1px solid var(--hover-bg);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 1em;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .modal-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s, opacity 0.2s;
+        }
+        .modal-button.primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        .modal-button.primary:hover { opacity: 0.9; }
+        .modal-button.secondary {
+            background-color: var(--hover-bg);
+            color: var(--text-color);
+        }
+        .modal-button.secondary:hover { opacity: 0.8; }
+        .modal-button.danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        #confirm-modal .modal-body {
+            padding: 20px 0;
+            font-size: 1.1em;
+        }
+        
+        /* Custom Color Picker */
+        #custom-color-picker-wrapper > label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        #color-preview {
+            width: 100%;
+            height: 40px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            border: 1px solid var(--hover-bg);
+        }
+        .slider-container {
+            display: grid;
+            grid-template-columns: 30px 1fr;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .slider-container label {
+            font-size: 0.9em;
+            color: var(--text-color);
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--hover-bg);
+            outline: none;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #fff;
+            border: 1px solid var(--hover-bg);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #fff;
+            border: 1px solid var(--hover-bg);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div id="header-left">
+            <div id="breadcrumbs"></div>
+        </div>
+        <div id="header-right">
+            <button id="confirm-delete-button" class="icon-button" title="選択した項目を削除">
+                <span class="material-icons">check</span>
+            </button>
+            <button id="delete-toggle" class="icon-button" title="削除モード">
+                <span class="material-icons">delete</span>
+            </button>
+            <button id="add-button" class="icon-button" title="追加">
+                <span class="material-icons">add</span>
+            </button>
+        </div>
+    </header>
+
+    <div id="add-menu">
+        <div class="add-option" id="add-bookmark-option">
+            <span class="material-icons">bookmark</span>
+            <span>ブックマーク</span>
+        </div>
+        <div class="add-option" id="add-folder-option">
+            <span class="material-icons">folder</span>
+            <span>フォルダー</span>
+        </div>
+    </div>
+
+    <main id="bookmarks-container">
+        <div id="empty-message" style="display: none;">
+            右上の<span class="material-icons">add</span>アイコンでショートカットを追加しましょう！
+        </div>
+    </main>
+
+    <!-- ブックマーク追加モーダル -->
+    <div id="bookmark-modal" class="modal">
+        <div class="modal-content">
+            <h2>ブックマークの追加</h2>
+            <input type="url" id="bookmark-url-input" placeholder="URLを入力 (例: https://www.google.com)" required>
+            <div class="modal-buttons">
+                <button class="modal-button secondary" id="cancel-bookmark">キャンセル</button>
+                <button class="modal-button primary" id="save-bookmark">追加</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- フォルダ追加モーダル -->
+    <div id="folder-modal" class="modal">
+        <div class="modal-content">
+            <h2>フォルダーの作成</h2>
+            <input type="text" id="folder-name-input" placeholder="フォルダー名" required>
+            
+            <!-- Custom Color Picker -->
+            <div id="custom-color-picker-wrapper">
+                <label>フォルダーの色</label>
+                <div id="color-preview"></div>
+                <div id="color-sliders">
+                    <div class="slider-container">
+                        <label for="red-slider">赤</label>
+                        <input type="range" id="red-slider" min="0" max="255">
+                    </div>
+                    <div class="slider-container">
+                        <label for="green-slider">緑</label>
+                        <input type="range" id="green-slider" min="0" max="255">
+                    </div>
+                    <div class="slider-container">
+                        <label for="blue-slider">青</label>
+                        <input type="range" id="blue-slider" min="0" max="255">
+                    </div>
+                </div>
+                <input type="hidden" id="folder-color-hidden-input">
+            </div>
+            
+            <input type="text" id="folder-emoji-input" placeholder="絵文字 (例: 💻)">
+            <div class="modal-buttons">
+                <button class="modal-button secondary" id="cancel-folder">キャンセル</button>
+                <button class="modal-button primary" id="save-folder">作成</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 確認モーダル（共通） -->
+    <div id="confirm-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="confirm-title">確認</h2>
+            <div id="confirm-message" class="modal-body"></div>
+            <div class="modal-buttons">
+                <button class="modal-button secondary" id="confirm-cancel">キャンセル</button>
+                <button class="modal-button danger" id="confirm-ok">OK</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // ==============================
+        // State and Constants
+        // ==============================
+        const STORAGE_KEY = 'myBookmarkSiteData';
+        let isDeleteMode = false;
+        let currentParentId = 'root';
+
+        const INITIAL_DATA = [
+            { id: 'b_google', type: 'bookmark', url: 'https://www.google.co.jp', title: 'Google', parentId: 'root' },
+            { id: 'b_youtube', type: 'bookmark', url: 'https://www.youtube.com', title: 'YouTube', parentId: 'root' },
+            { id: 'b_amazon', type: 'bookmark', url: 'https://www.amazon.co.jp', title: 'Amazon', parentId: 'root' },
+            { id: 'b_mercari', type: 'bookmark', url: 'https://jp.mercari.com/', title: 'メルカリ', parentId: 'root' },
+            { id: 'f_ai', type: 'folder', name: '生成AI', color: '#33AABB', emoji: '🧠', parentId: 'root' },
+            { id: 'b_chatgpt', type: 'bookmark', url: 'https://chatgpt.com', title: 'ChatGPT', parentId: 'f_ai' },
+            { id: 'b_gemini', type: 'bookmark', url: 'https://gemini.google.com', title: 'Gemini', parentId: 'f_ai' }
+        ];
+
+        // ==============================
+        // Data Management Functions
+        // ==============================
+        function getBookmarksData() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            if (data) {
+                return JSON.parse(data);
+            } else {
+                const initialData = INITIAL_DATA.map(item => ({
+                    ...item,
+                    favicon: item.type === 'bookmark' ? getFaviconUrl(item.url) : null
+                }));
+                saveBookmarksData(initialData);
+                return initialData;
+            }
+        }
+
+        function saveBookmarksData(data) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+
+        function getFaviconUrl(url) {
+            try {
+                const domain = new URL(url).hostname;
+                return `https://s2.googleusercontent.com/s2/favicons?domain=${domain}&sz=64`;
+            } catch (e) {
+                console.error("Invalid URL for favicon:", url);
+                return 'https://via.placeholder.com/64'; // Fallback image
+            }
+        }
+
+        // ==============================
+        // UI Rendering Functions
+        // ==============================
+        function renderAll() {
+            renderBreadcrumbs();
+            renderBookmarks();
+        }
+
+        function renderBreadcrumbs() {
+            const breadcrumbsContainer = document.getElementById('breadcrumbs');
+            breadcrumbsContainer.innerHTML = '';
+            const allData = getBookmarksData();
+            
+            const path = [];
+            let currentId = currentParentId;
+
+            while (currentId !== 'root') {
+                const folder = allData.find(item => item.id === currentId);
+                if (folder) {
+                    path.unshift(folder);
+                    currentId = folder.parentId;
+                } else {
+                    break; // Parent not found, break loop
+                }
+            }
+
+            const rootLink = document.createElement('a');
+            rootLink.textContent = 'ホーム';
+            rootLink.onclick = () => setCurrentParentId('root');
+            breadcrumbsContainer.appendChild(rootLink);
+
+            path.forEach(folder => {
+                const separator = document.createElement('span');
+                separator.textContent = '>';
+                breadcrumbsContainer.appendChild(separator);
+
+                const folderLink = document.createElement('a');
+                folderLink.textContent = folder.name;
+                folderLink.onclick = () => setCurrentParentId(folder.id);
+                breadcrumbsContainer.appendChild(folderLink);
+            });
+        }
+        
+        function renderBookmarks() {
+            const container = document.getElementById('bookmarks-container');
+            const emptyMessage = document.getElementById('empty-message');
+            container.innerHTML = '';
+            container.appendChild(emptyMessage);
+
+            const allData = getBookmarksData();
+            const itemsToDisplay = allData
+                .filter(item => item.parentId === currentParentId)
+                .sort((a, b) => {
+                    if (a.type === 'folder' && b.type !== 'folder') return -1;
+                    if (a.type !== 'folder' && b.type === 'folder') return 1;
+                    return 0; // Keep original order for same types
+                });
+
+            emptyMessage.style.display = itemsToDisplay.length === 0 ? 'block' : 'none';
+
+            itemsToDisplay.forEach(item => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'bookmark-item';
+                itemElement.dataset.id = item.id;
+                itemElement.dataset.type = item.type;
+
+                // Click Handler
+                itemElement.addEventListener('click', (e) => {
+                    if (isDeleteMode) {
+                        e.preventDefault(); // フォルダ遷移やリンクを防止
+                        const checkbox = itemElement.querySelector('.select-checkbox');
+                        
+                        // 1. チェックボックスの状態をプログラムで反転させる
+                        checkbox.checked = !checkbox.checked;
+
+                        // 2. その新しい状態を元に、親要素の見た目（selectedクラス）を更新する
+                        itemElement.classList.toggle('selected', checkbox.checked);
+                        
+                    } else if (item.type === 'folder') {
+                        e.preventDefault();
+                        setCurrentParentId(item.id);
+                    } else if (item.type === 'bookmark') {
+                        window.open(item.url, '_blank');
+                    }
+                });
+                
+                let contentHTML = '';
+                if (item.type === 'bookmark') {
+                    contentHTML = `
+                        <input type="checkbox" class="select-checkbox" data-id="${item.id}">
+                        <div class="favicon-container">
+                            <img src="${item.favicon || 'https://via.placeholder.com/64'}" alt="favicon" onerror="this.onerror=null;this.src='https://via.placeholder.com/64'">
+                        </div>
+                        <div class="bookmark-title">${item.title || item.url}</div>
+                    `;
+                } else if (item.type === 'folder') {
+                    itemElement.style.backgroundColor = item.color;
+                    contentHTML = `
+                        <input type="checkbox" class="select-checkbox" data-id="${item.id}">
+                        <div class="favicon-container" style="font-size: 32px; color: #fff;">
+                            ${item.emoji || '📁'}
+                        </div>
+                        <div class="bookmark-title" style="font-weight: bold;">${item.name}</div>
+                    `;
+                }
+
+                itemElement.innerHTML = contentHTML;
+                container.insertBefore(itemElement, emptyMessage);
+            });
+
+            updateDeleteModeDisplay();
+        }
+
+        // ==============================
+        // Core Logic Functions
+        // ==============================
+        function setCurrentParentId(newId) {
+            currentParentId = newId;
+            if(isDeleteMode) {
+                toggleDeleteMode();
+            }
+            renderAll();
+        }
+
+        function saveBookmark() {
+            const urlInput = document.getElementById('bookmark-url-input');
+            let url = urlInput.value.trim();
+
+            if (!url) {
+                showCustomAlert("URLを入力してください。");
+                return;
+            }
+            if (!url.match(/^https?:\/\//)) {
+                url = 'https://' + url;
+            }
+            
+            try {
+                const newBookmark = {
+                    id: 'b_' + crypto.randomUUID(),
+                    type: 'bookmark',
+                    url: url,
+                    title: new URL(url).hostname.replace(/^www\./, ''),
+                    favicon: getFaviconUrl(url),
+                    parentId: currentParentId
+                };
+
+                const data = getBookmarksData();
+                data.push(newBookmark);
+                saveBookmarksData(data);
+                
+                closeModal('bookmark-modal');
+                urlInput.value = '';
+                renderAll();
+            } catch(e) {
+                showCustomAlert("無効なURLです。正しい形式で入力してください。");
+            }
+        }
+
+        function saveFolder() {
+            const nameInput = document.getElementById('folder-name-input');
+            const name = nameInput.value.trim();
+
+            if (!name) {
+                showCustomAlert("フォルダー名を入力してください。");
+                return;
+            }
+
+            const newFolder = {
+                id: 'f_' + crypto.randomUUID(),
+                type: 'folder',
+                name: name,
+                color: document.getElementById('folder-color-hidden-input').value,
+                emoji: document.getElementById('folder-emoji-input').value.trim() || '📁',
+                parentId: currentParentId
+            };
+
+            const data = getBookmarksData();
+            data.push(newFolder);
+            saveBookmarksData(data);
+            
+            closeModal('folder-modal');
+            nameInput.value = '';
+            document.getElementById('folder-emoji-input').value = '';
+            renderAll();
+        }
+
+        function toggleDeleteMode() {
+            isDeleteMode = !isDeleteMode;
+            updateDeleteModeDisplay();
+
+            if (!isDeleteMode) {
+                document.querySelectorAll('.bookmark-item.selected').forEach(item => {
+                    item.classList.remove('selected');
+                    item.querySelector('.select-checkbox').checked = false;
+                });
+            }
+        }
+
+        function updateDeleteModeDisplay() {
+            const container = document.body;
+            const deleteIcon = document.getElementById('delete-toggle').querySelector('.material-icons');
+            
+            if (isDeleteMode) {
+                container.classList.add('delete-mode');
+                deleteIcon.textContent = 'cancel';
+            } else {
+                container.classList.remove('delete-mode');
+                deleteIcon.textContent = 'delete';
+            }
+        }
+
+        function deleteSelectedItems() {
+            const selectedIds = Array.from(document.querySelectorAll('.select-checkbox:checked')).map(cb => cb.dataset.id);
+
+            if (selectedIds.length === 0) {
+                showCustomAlert("削除する項目を選択してください。");
+                return;
+            }
+
+            showConfirm(
+                `${selectedIds.length}件の項目を削除します。フォルダを削除すると、その中のアイテムもすべて削除されます。よろしいですか？`,
+                () => {
+                    let data = getBookmarksData();
+                    const allData = [...data];
+
+                    const getDescendantIds = (folderId) => {
+                        let childrenIds = [];
+                        const children = allData.filter(item => item.parentId === folderId);
+                        for (const child of children) {
+                            childrenIds.push(child.id);
+                            if (child.type === 'folder') {
+                                childrenIds = childrenIds.concat(getDescendantIds(child.id));
+                            }
+                        }
+                        return childrenIds;
+                    };
+
+                    const idsToDelete = new Set(selectedIds);
+                    selectedIds.forEach(id => {
+                        if (id.startsWith('f_')) {
+                            getDescendantIds(id).forEach(childId => idsToDelete.add(childId));
+                        }
+                    });
+
+                    const newData = data.filter(item => !idsToDelete.has(item.id));
+                    saveBookmarksData(newData);
+                    toggleDeleteMode();
+                    renderAll();
+                }
+            );
+        }
+        
+        // ==============================
+        // Modal & Color Picker Handling
+        // ==============================
+        function showModal(id) { document.getElementById(id).style.display = 'block'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        
+        function showConfirm(message, onConfirm) {
+            const modal = document.getElementById('confirm-modal');
+            modal.querySelector('#confirm-message').textContent = message;
+            
+            const okButton = modal.querySelector('#confirm-ok');
+            const cancelButton = modal.querySelector('#confirm-cancel');
+            
+            const newOkButton = okButton.cloneNode(true);
+            okButton.parentNode.replaceChild(newOkButton, okButton);
+            
+            newOkButton.onclick = () => {
+                closeModal('confirm-modal');
+                onConfirm();
+            };
+
+            cancelButton.onclick = () => closeModal('confirm-modal');
+            cancelButton.style.display = 'inline-block';
+            newOkButton.textContent = 'OK';
+
+            showModal('confirm-modal');
+        }
+
+        function showCustomAlert(message) {
+            showConfirm(message, () => {});
+            document.getElementById('confirm-cancel').style.display = 'none';
+            document.getElementById('confirm-ok').textContent = '閉じる';
+        }
+
+        function initializeColorPicker() {
+            const redSlider = document.getElementById('red-slider');
+            const greenSlider = document.getElementById('green-slider');
+            const blueSlider = document.getElementById('blue-slider');
+            const colorPreview = document.getElementById('color-preview');
+            const hiddenInput = document.getElementById('folder-color-hidden-input');
+
+            const toHex = (c) => ('0' + parseInt(c).toString(16)).slice(-2);
+
+            function updateColor() {
+                const r = redSlider.value;
+                const g = greenSlider.value;
+                const b = blueSlider.value;
+                const hexColor = `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+                colorPreview.style.backgroundColor = hexColor;
+                hiddenInput.value = hexColor;
+            }
+
+            [redSlider, greenSlider, blueSlider].forEach(slider => {
+                slider.addEventListener('input', updateColor);
+            });
+        }
+
+        function resetColorPicker(hexColor = '#4A90E2') {
+            const r = parseInt(hexColor.substr(1, 2), 16);
+            const g = parseInt(hexColor.substr(3, 2), 16);
+            const b = parseInt(hexColor.substr(5, 2), 16);
+            document.getElementById('red-slider').value = r;
+            document.getElementById('green-slider').value = g;
+            document.getElementById('blue-slider').value = b;
+            document.getElementById('color-preview').style.backgroundColor = hexColor;
+            document.getElementById('folder-color-hidden-input').value = hexColor;
+        }
+
+        // ==============================
+        // Event Listeners
+        // ==============================
+        function initializeEventListeners() {
+            document.getElementById('add-button').addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.getElementById('add-menu').classList.toggle('expanded');
+            });
+
+            document.getElementById('add-bookmark-option').addEventListener('click', () => {
+                document.getElementById('add-menu').classList.remove('expanded');
+                showModal('bookmark-modal');
+            });
+            
+            document.getElementById('add-folder-option').addEventListener('click', () => {
+                document.getElementById('add-menu').classList.remove('expanded');
+                resetColorPicker();
+                showModal('folder-modal');
+            });
+
+            document.getElementById('delete-toggle').addEventListener('click', toggleDeleteMode);
+            document.getElementById('confirm-delete-button').addEventListener('click', deleteSelectedItems);
+
+            document.getElementById('save-bookmark').addEventListener('click', saveBookmark);
+            document.getElementById('cancel-bookmark').addEventListener('click', () => closeModal('bookmark-modal'));
+            document.getElementById('save-folder').addEventListener('click', saveFolder);
+            document.getElementById('cancel-folder').addEventListener('click', () => closeModal('folder-modal'));
+
+            window.addEventListener('click', (event) => {
+                if (event.target.classList.contains('modal')) {
+                    event.target.style.display = "none";
+                }
+                const addMenu = document.getElementById('add-menu');
+                if (addMenu.classList.contains('expanded') && !addMenu.contains(event.target) && !event.target.closest('#add-button')) {
+                    addMenu.classList.remove('expanded');
+                }
+            });
+            
+            document.getElementById('bookmark-url-input').addEventListener('keydown', e => e.key === 'Enter' && saveBookmark());
+            document.getElementById('folder-name-input').addEventListener('keydown', e => e.key === 'Enter' && saveFolder());
+        }
+
+        // ==============================
+        // Initial Load
+        // ==============================
+        initializeColorPicker();
+        initializeEventListeners();
+        renderAll();
+    });
+    </script>
+</body>
+</html>
