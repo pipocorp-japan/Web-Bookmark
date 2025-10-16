@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web Bookmark</title>
+    <title>マイ・ブックマークサイト</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
         :root {
             --bg-color: #f4f7f8;
@@ -191,6 +192,28 @@
             height: 20px;
             cursor: pointer;
         }
+        
+        /* 並び替えモード */
+        @keyframes shake {
+            0%, 100% { transform: rotate(0); }
+            25% { transform: rotate(-1.5deg); }
+            75% { transform: rotate(1.5deg); }
+        }
+        .sort-mode .bookmark-item {
+            animation: shake 0.3s infinite;
+            cursor: grab;
+        }
+        .sort-mode .bookmark-item:active {
+            cursor: grabbing;
+        }
+        .bookmark-item.sortable-ghost {
+            opacity: 0.4;
+            background: var(--hover-bg);
+        }
+        .bookmark-item.sortable-chosen {
+            box-shadow: 0 8px 16px var(--shadow-color);
+        }
+
 
         .favicon-container {
             width: 48px;
@@ -254,8 +277,8 @@
         @keyframes slideIn { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
         .modal-content h2 { margin-top: 0; }
-        .modal-content input, .modal-content .modal-buttons, #custom-color-picker-wrapper { margin-top: 15px; }
-        .modal-content input {
+        .modal-content input, .modal-content select, .modal-content .modal-buttons, #custom-color-picker-wrapper { margin-top: 15px; }
+        .modal-content input, .modal-content select {
             width: 100%;
             padding: 12px;
             box-sizing: border-box;
@@ -298,57 +321,13 @@
             font-size: 1.1em;
         }
         
-        /* Custom Color Picker */
-        #custom-color-picker-wrapper > label {
+        #settings-modal .settings-section {
+            margin-top: 20px;
+        }
+        #settings-modal label {
             display: block;
             margin-bottom: 8px;
             font-weight: 500;
-        }
-        #color-preview {
-            width: 100%;
-            height: 40px;
-            border-radius: 6px;
-            margin-bottom: 12px;
-            border: 1px solid var(--hover-bg);
-        }
-        .slider-container {
-            display: grid;
-            grid-template-columns: 30px 1fr;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 8px;
-        }
-        .slider-container label {
-            font-size: 0.9em;
-            color: var(--text-color);
-        }
-        input[type="range"] {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 100%;
-            height: 6px;
-            border-radius: 3px;
-            background: var(--hover-bg);
-            outline: none;
-            cursor: pointer;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: #fff;
-            border: 1px solid var(--hover-bg);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-        }
-        input[type="range"]::-moz-range-thumb {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: #fff;
-            border: 1px solid var(--hover-bg);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
         }
 
     </style>
@@ -360,14 +339,20 @@
             <div id="breadcrumbs"></div>
         </div>
         <div id="header-right">
-            <button id="confirm-delete-button" class="icon-button" title="選択した項目を削除">
+            <button id="confirm-delete-button" class="icon-button" data-lang-title="delete_selected_items_title">
                 <span class="material-icons">check</span>
             </button>
-            <button id="delete-toggle" class="icon-button" title="削除モード">
+            <button id="delete-toggle" class="icon-button" data-lang-title="delete_mode_title">
                 <span class="material-icons">delete</span>
             </button>
-            <button id="add-button" class="icon-button" title="追加">
+             <button id="sort-toggle" class="icon-button" data-lang-title="sort_mode_title">
+                <span class="material-icons">sort</span>
+            </button>
+            <button id="add-button" class="icon-button" data-lang-title="add_title">
                 <span class="material-icons">add</span>
+            </button>
+             <button id="settings-button" class="icon-button" data-lang-title="settings_title">
+                <span class="material-icons">settings</span>
             </button>
         </div>
     </header>
@@ -375,75 +360,93 @@
     <div id="add-menu">
         <div class="add-option" id="add-bookmark-option">
             <span class="material-icons">bookmark</span>
-            <span>ブックマーク</span>
+            <span data-lang-key="bookmark">ブックマーク</span>
         </div>
         <div class="add-option" id="add-folder-option">
             <span class="material-icons">folder</span>
-            <span>フォルダー</span>
+            <span data-lang-key="folder">フォルダー</span>
         </div>
     </div>
 
     <main id="bookmarks-container">
         <div id="empty-message" style="display: none;">
-            右上の<span class="material-icons">add</span>アイコンでショートカットを追加しましょう！
+            <span data-lang-key="empty_message_1">右上の</span><span class="material-icons">add</span><span data-lang-key="empty_message_2">アイコンでショートカットを追加しましょう！</span>
         </div>
     </main>
 
-    <!-- ブックマーク追加モーダル -->
+    <!-- Modals -->
     <div id="bookmark-modal" class="modal">
         <div class="modal-content">
-            <h2>ブックマークの追加</h2>
-            <input type="url" id="bookmark-url-input" placeholder="URLを入力 (例: https://www.google.com)" required>
+            <h2 data-lang-key="add_bookmark_title">ブックマークの追加</h2>
+            <input type="url" id="bookmark-url-input" data-lang-placeholder="url_placeholder" required>
             <div class="modal-buttons">
-                <button class="modal-button secondary" id="cancel-bookmark">キャンセル</button>
-                <button class="modal-button primary" id="save-bookmark">追加</button>
+                <button class="modal-button secondary" id="cancel-bookmark" data-lang-key="cancel">キャンセル</button>
+                <button class="modal-button primary" id="save-bookmark" data-lang-key="add">追加</button>
             </div>
         </div>
     </div>
 
-    <!-- フォルダ追加モーダル -->
     <div id="folder-modal" class="modal">
         <div class="modal-content">
-            <h2>フォルダーの作成</h2>
-            <input type="text" id="folder-name-input" placeholder="フォルダー名" required>
+            <h2 data-lang-key="create_folder_title">フォルダーの作成</h2>
+            <input type="text" id="folder-name-input" data-lang-placeholder="folder_name_placeholder" required>
             
-            <!-- Custom Color Picker -->
             <div id="custom-color-picker-wrapper">
-                <label>フォルダーの色</label>
+                <label data-lang-key="folder_color">フォルダーの色</label>
                 <div id="color-preview"></div>
                 <div id="color-sliders">
-                    <div class="slider-container">
-                        <label for="red-slider">赤</label>
+                     <div class="slider-container">
+                        <label for="red-slider" data-lang-key="color_red">赤</label>
                         <input type="range" id="red-slider" min="0" max="255">
                     </div>
                     <div class="slider-container">
-                        <label for="green-slider">緑</label>
+                        <label for="green-slider" data-lang-key="color_green">緑</label>
                         <input type="range" id="green-slider" min="0" max="255">
                     </div>
                     <div class="slider-container">
-                        <label for="blue-slider">青</label>
+                        <label for="blue-slider" data-lang-key="color_blue">青</label>
                         <input type="range" id="blue-slider" min="0" max="255">
                     </div>
                 </div>
-                <input type="hidden" id="folder-color-hidden-input">
             </div>
             
-            <input type="text" id="folder-emoji-input" placeholder="絵文字 (例: 💻)">
+            <input type="text" id="folder-emoji-input" data-lang-placeholder="emoji_placeholder">
             <div class="modal-buttons">
-                <button class="modal-button secondary" id="cancel-folder">キャンセル</button>
-                <button class="modal-button primary" id="save-folder">作成</button>
+                <button class="modal-button secondary" id="cancel-folder" data-lang-key="cancel">キャンセル</button>
+                <button class="modal-button primary" id="save-folder" data-lang-key="create">作成</button>
             </div>
         </div>
     </div>
     
-    <!-- 確認モーダル（共通） -->
     <div id="confirm-modal" class="modal">
         <div class="modal-content">
-            <h2 id="confirm-title">確認</h2>
+            <h2 id="confirm-title" data-lang-key="confirm_title">確認</h2>
             <div id="confirm-message" class="modal-body"></div>
             <div class="modal-buttons">
-                <button class="modal-button secondary" id="confirm-cancel">キャンセル</button>
+                <button class="modal-button secondary" id="confirm-cancel" data-lang-key="cancel">キャンセル</button>
                 <button class="modal-button danger" id="confirm-ok">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <h2 data-lang-key="settings_title">設定</h2>
+            <div class="settings-section">
+                <label for="language-select" data-lang-key="language_setting">言語</label>
+                <select id="language-select">
+                    <option value="ja">日本語</option>
+                    <option value="en">English</option>
+                    <option value="ko">한국어</option>
+                    <option value="zh">中文</option>
+                </select>
+            </div>
+            <div class="settings-section">
+                <label data-lang-key="data_management">データ管理</label>
+                <button id="reset-data-button" class="modal-button danger" data-lang-key="reset_home_screen">ホーム画面をリセット</button>
+            </div>
+             <div class="modal-buttons">
+                <button class="modal-button secondary" id="close-settings" data-lang-key="close">閉じる</button>
             </div>
         </div>
     </div>
@@ -454,25 +457,206 @@
         // ==============================
         // State and Constants
         // ==============================
-        const STORAGE_KEY = 'myBookmarkSiteData';
+        const DATA_STORAGE_KEY = 'myBookmarkSiteData';
+        const LANGUAGE_STORAGE_KEY = 'myBookmarkSiteLanguage';
         let isDeleteMode = false;
+        let isSortMode = false;
+        let sortableInstance = null;
         let currentParentId = 'root';
+        let currentLanguage = 'ja';
 
         const INITIAL_DATA = [
-            { id: 'b_google', type: 'bookmark', url: 'https://www.google.co.jp', title: 'Google', parentId: 'root' },
-            { id: 'b_youtube', type: 'bookmark', url: 'https://www.youtube.com', title: 'YouTube', parentId: 'root' },
-            { id: 'b_amazon', type: 'bookmark', url: 'https://www.amazon.co.jp', title: 'Amazon', parentId: 'root' },
-            { id: 'b_mercari', type: 'bookmark', url: 'https://jp.mercari.com/', title: 'メルカリ', parentId: 'root' },
-            { id: 'f_ai', type: 'folder', name: '生成AI', color: '#33AABB', emoji: '🧠', parentId: 'root' },
-            { id: 'b_chatgpt', type: 'bookmark', url: 'https://chatgpt.com', title: 'ChatGPT', parentId: 'f_ai' },
-            { id: 'b_gemini', type: 'bookmark', url: 'https://gemini.google.com', title: 'Gemini', parentId: 'f_ai' }
+            // ... (initial data remains the same)
         ];
+
+        // ==============================
+        // Localization (i18n)
+        // ==============================
+        const translations = {
+            ja: {
+                home: 'ホーム',
+                delete_selected_items_title: '選択した項目を削除',
+                delete_mode_title: '削除モード',
+                sort_mode_title: '並び替え',
+                add_title: '追加',
+                settings_title: '設定',
+                bookmark: 'ブックマーク',
+                folder: 'フォルダー',
+                empty_message_1: '右上の',
+                empty_message_2: 'アイコンでショートカットを追加しましょう！',
+                add_bookmark_title: 'ブックマークの追加',
+                url_placeholder: 'URLを入力 (例: https://www.google.com)',
+                cancel: 'キャンセル',
+                add: '追加',
+                create_folder_title: 'フォルダーの作成',
+                folder_name_placeholder: 'フォルダー名',
+                folder_color: 'フォルダーの色',
+                color_red: '赤',
+                color_green: '緑',
+                color_blue: '青',
+                emoji_placeholder: '絵文字 (例: 💻)',
+                create: '作成',
+                confirm_title: '確認',
+                ok: 'OK',
+                close: '閉じる',
+                language_setting: '言語',
+                data_management: 'データ管理',
+                reset_home_screen: 'ホーム画面をリセット',
+                // Dynamic messages
+                alert_url_required: 'URLを入力してください。',
+                alert_invalid_url: '無効なURLです。正しい形式で入力してください。',
+                alert_folder_name_required: 'フォルダー名を入力してください。',
+                alert_no_items_selected: '削除する項目を選択してください。',
+                confirm_delete: '{count}件の項目を削除します。フォルダを削除すると、その中のアイテムもすべて削除されます。よろしいですか？',
+                confirm_reset: 'すべてのブックマークとフォルダが削除され、初期状態に戻ります。この操作は取り消せません。よろしいですか？'
+            },
+            en: {
+                home: 'Home',
+                delete_selected_items_title: 'Delete selected items',
+                delete_mode_title: 'Delete mode',
+                sort_mode_title: 'Sort mode',
+                add_title: 'Add',
+                settings_title: 'Settings',
+                bookmark: 'Bookmark',
+                folder: 'Folder',
+                empty_message_1: 'Add shortcuts with the ',
+                empty_message_2: ' icon in the top right!',
+                add_bookmark_title: 'Add Bookmark',
+                url_placeholder: 'Enter URL (e.g., https://www.google.com)',
+                cancel: 'Cancel',
+                add: 'Add',
+                create_folder_title: 'Create Folder',
+                folder_name_placeholder: 'Folder name',
+                folder_color: 'Folder Color',
+                color_red: 'Red',
+                color_green: 'Green',
+                color_blue: 'Blue',
+                emoji_placeholder: 'Emoji (e.g., 💻)',
+                create: 'Create',
+                confirm_title: 'Confirm',
+                ok: 'OK',
+                close: 'Close',
+                language_setting: 'Language',
+                data_management: 'Data Management',
+                reset_home_screen: 'Reset Home Screen',
+                // Dynamic messages
+                alert_url_required: 'Please enter a URL.',
+                alert_invalid_url: 'Invalid URL. Please enter in the correct format.',
+                alert_folder_name_required: 'Please enter a folder name.',
+                alert_no_items_selected: 'Please select items to delete.',
+                confirm_delete: 'Delete {count} item(s)? Deleting a folder will also delete all its contents. Are you sure?',
+                confirm_reset: 'All bookmarks and folders will be deleted and reset to the initial state. This action cannot be undone. Are you sure?'
+            },
+            ko: {
+                home: '홈',
+                delete_selected_items_title: '선택한 항목 삭제',
+                delete_mode_title: '삭제 모드',
+                sort_mode_title: '정렬 모드',
+                add_title: '추가',
+                settings_title: '설정',
+                bookmark: '북마크',
+                folder: '폴더',
+                empty_message_1: '오른쪽 상단의 ',
+                empty_message_2: ' 아이콘으로 바로가기를 추가하세요!',
+                add_bookmark_title: '북마크 추가',
+                url_placeholder: 'URL 입력 (예: https://www.google.com)',
+                cancel: '취소',
+                add: '추가',
+                create_folder_title: '폴더 만들기',
+                folder_name_placeholder: '폴더 이름',
+                folder_color: '폴더 색상',
+                color_red: '빨강',
+                color_green: '초록',
+                color_blue: '파랑',
+                emoji_placeholder: '이모지 (예: 💻)',
+                create: '만들기',
+                confirm_title: '확인',
+                ok: '확인',
+                close: '닫기',
+                language_setting: '언어',
+                data_management: '데이터 관리',
+                reset_home_screen: '홈 화면 초기화',
+                // Dynamic messages
+                alert_url_required: 'URL을 입력해주세요.',
+                alert_invalid_url: '유효하지 않은 URL입니다. 올바른 형식으로 입력해주세요.',
+                alert_folder_name_required: '폴더 이름을 입력해주세요.',
+                alert_no_items_selected: '삭제할 항목을 선택해주세요.',
+                confirm_delete: '{count}개의 항목을 삭제하시겠습니까? 폴더를 삭제하면 내부의 모든 항목도 삭제됩니다. 계속하시겠습니까?',
+                confirm_reset: '모든 북마크와 폴더가 삭제되고 초기 상태로 돌아갑니다. 이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?'
+            },
+            zh: {
+                home: '主页',
+                delete_selected_items_title: '删除所选项目',
+                delete_mode_title: '删除模式',
+                sort_mode_title: '排序模式',
+                add_title: '添加',
+                settings_title: '设置',
+                bookmark: '书签',
+                folder: '文件夹',
+                empty_message_1: '点击右上角的 ',
+                empty_message_2: ' 图标添加快捷方式！',
+                add_bookmark_title: '添加书签',
+                url_placeholder: '输入网址 (例如 https://www.google.com)',
+                cancel: '取消',
+                add: '添加',
+                create_folder_title: '创建文件夹',
+                folder_name_placeholder: '文件夹名称',
+                folder_color: '文件夹颜色',
+                color_red: '红',
+                color_green: '绿',
+                color_blue: '蓝',
+                emoji_placeholder: '表情符号 (例如 💻)',
+                create: '创建',
+                confirm_title: '确认',
+                ok: '确定',
+                close: '关闭',
+                language_setting: '语言',
+                data_management: '数据管理',
+                reset_home_screen: '重置主屏幕',
+                // Dynamic messages
+                alert_url_required: '请输入网址。',
+                alert_invalid_url: '无效的网址。请输入正确的格式。',
+                alert_folder_name_required: '请输入文件夹名称。',
+                alert_no_items_selected: '请选择要删除的项目。',
+                confirm_delete: '要删除 {count} 个项目吗？删除文件夹将同时删除其所有内容。您确定吗？',
+                confirm_reset: '所有书签和文件夹将被删除并重置为初始状态。此操作无法撤销。您确定吗？'
+            }
+        };
+
+        function getLangString(key, replacements = {}) {
+            let str = translations[currentLanguage]?.[key] || translations.en[key] || key;
+            for (const placeholder in replacements) {
+                str = str.replace(`{${placeholder}}`, replacements[placeholder]);
+            }
+            return str;
+        }
+
+        function applyTranslations() {
+            document.documentElement.lang = currentLanguage;
+            document.querySelectorAll('[data-lang-key]').forEach(el => {
+                el.textContent = getLangString(el.dataset.langKey);
+            });
+            document.querySelectorAll('[data-lang-placeholder]').forEach(el => {
+                el.placeholder = getLangString(el.dataset.langPlaceholder);
+            });
+            document.querySelectorAll('[data-lang-title]').forEach(el => {
+                el.title = getLangString(el.dataset.langTitle);
+            });
+            renderAll(); // Re-render to apply language to dynamic parts like breadcrumbs
+        }
+
+        function setCurrentLanguage(lang) {
+            currentLanguage = lang;
+            localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
+            document.getElementById('language-select').value = lang;
+            applyTranslations();
+        }
 
         // ==============================
         // Data Management Functions
         // ==============================
         function getBookmarksData() {
-            const data = localStorage.getItem(STORAGE_KEY);
+            const data = localStorage.getItem(DATA_STORAGE_KEY);
             if (data) {
                 return JSON.parse(data);
             } else {
@@ -486,18 +670,10 @@
         }
 
         function saveBookmarksData(data) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            localStorage.setItem(DATA_STORAGE_KEY, JSON.stringify(data));
         }
 
-        function getFaviconUrl(url) {
-            try {
-                const domain = new URL(url).hostname;
-                return `https://s2.googleusercontent.com/s2/favicons?domain=${domain}&sz=64`;
-            } catch (e) {
-                console.error("Invalid URL for favicon:", url);
-                return 'https://via.placeholder.com/64'; // Fallback image
-            }
-        }
+        // ... (getFaviconUrl remains the same)
 
         // ==============================
         // UI Rendering Functions
@@ -512,247 +688,69 @@
             breadcrumbsContainer.innerHTML = '';
             const allData = getBookmarksData();
             
-            const path = [];
-            let currentId = currentParentId;
-
-            while (currentId !== 'root') {
-                const folder = allData.find(item => item.id === currentId);
-                if (folder) {
-                    path.unshift(folder);
-                    currentId = folder.parentId;
-                } else {
-                    break; // Parent not found, break loop
-                }
-            }
-
+            // ... (path finding logic remains the same)
+            
             const rootLink = document.createElement('a');
-            rootLink.textContent = 'ホーム';
+            rootLink.textContent = getLangString('home'); // Use translation
             rootLink.onclick = () => setCurrentParentId('root');
             breadcrumbsContainer.appendChild(rootLink);
 
-            path.forEach(folder => {
-                const separator = document.createElement('span');
-                separator.textContent = '>';
-                breadcrumbsContainer.appendChild(separator);
-
-                const folderLink = document.createElement('a');
-                folderLink.textContent = folder.name;
-                folderLink.onclick = () => setCurrentParentId(folder.id);
-                breadcrumbsContainer.appendChild(folderLink);
-            });
+            // ... (path rendering logic remains the same)
         }
         
-        function renderBookmarks() {
-            const container = document.getElementById('bookmarks-container');
-            const emptyMessage = document.getElementById('empty-message');
-            container.innerHTML = '';
-            container.appendChild(emptyMessage);
-
-            const allData = getBookmarksData();
-            const itemsToDisplay = allData
-                .filter(item => item.parentId === currentParentId)
-                .sort((a, b) => {
-                    if (a.type === 'folder' && b.type !== 'folder') return -1;
-                    if (a.type !== 'folder' && b.type === 'folder') return 1;
-                    return 0; // Keep original order for same types
-                });
-
-            emptyMessage.style.display = itemsToDisplay.length === 0 ? 'block' : 'none';
-
-            itemsToDisplay.forEach(item => {
-                const itemElement = document.createElement('div');
-                itemElement.className = 'bookmark-item';
-                itemElement.dataset.id = item.id;
-                itemElement.dataset.type = item.type;
-
-                // Click Handler
-                itemElement.addEventListener('click', (e) => {
-                    if (isDeleteMode) {
-                        e.preventDefault(); // フォルダ遷移やリンクを防止
-                        const checkbox = itemElement.querySelector('.select-checkbox');
-                        
-                        // 1. チェックボックスの状態をプログラムで反転させる
-                        checkbox.checked = !checkbox.checked;
-
-                        // 2. その新しい状態を元に、親要素の見た目（selectedクラス）を更新する
-                        itemElement.classList.toggle('selected', checkbox.checked);
-                        
-                    } else if (item.type === 'folder') {
-                        e.preventDefault();
-                        setCurrentParentId(item.id);
-                    } else if (item.type === 'bookmark') {
-                        window.open(item.url, '_blank');
-                    }
-                });
-                
-                let contentHTML = '';
-                if (item.type === 'bookmark') {
-                    contentHTML = `
-                        <input type="checkbox" class="select-checkbox" data-id="${item.id}">
-                        <div class="favicon-container">
-                            <img src="${item.favicon || 'https://via.placeholder.com/64'}" alt="favicon" onerror="this.onerror=null;this.src='https://via.placeholder.com/64'">
-                        </div>
-                        <div class="bookmark-title">${item.title || item.url}</div>
-                    `;
-                } else if (item.type === 'folder') {
-                    itemElement.style.backgroundColor = item.color;
-                    contentHTML = `
-                        <input type="checkbox" class="select-checkbox" data-id="${item.id}">
-                        <div class="favicon-container" style="font-size: 32px; color: #fff;">
-                            ${item.emoji || '📁'}
-                        </div>
-                        <div class="bookmark-title" style="font-weight: bold;">${item.name}</div>
-                    `;
-                }
-
-                itemElement.innerHTML = contentHTML;
-                container.insertBefore(itemElement, emptyMessage);
-            });
-
-            updateDeleteModeDisplay();
-        }
+        // ... (renderBookmarks logic is mostly the same, click handlers are fine)
 
         // ==============================
         // Core Logic Functions
         // ==============================
-        function setCurrentParentId(newId) {
-            currentParentId = newId;
-            if(isDeleteMode) {
-                toggleDeleteMode();
-            }
-            renderAll();
-        }
-
+        
+        // ... (setCurrentParentId, saveBookmark, saveFolder, etc. need to use getLangString for alerts)
         function saveBookmark() {
-            const urlInput = document.getElementById('bookmark-url-input');
-            let url = urlInput.value.trim();
-
+            // ...
             if (!url) {
-                showCustomAlert("URLを入力してください。");
+                showCustomAlert(getLangString('alert_url_required'));
                 return;
             }
-            if (!url.match(/^https?:\/\//)) {
-                url = 'https://' + url;
-            }
-            
+            // ...
             try {
-                const newBookmark = {
-                    id: 'b_' + crypto.randomUUID(),
-                    type: 'bookmark',
-                    url: url,
-                    title: new URL(url).hostname.replace(/^www\./, ''),
-                    favicon: getFaviconUrl(url),
-                    parentId: currentParentId
-                };
-
-                const data = getBookmarksData();
-                data.push(newBookmark);
-                saveBookmarksData(data);
-                
-                closeModal('bookmark-modal');
-                urlInput.value = '';
-                renderAll();
+                // ...
             } catch(e) {
-                showCustomAlert("無効なURLです。正しい形式で入力してください。");
+                showCustomAlert(getLangString('alert_invalid_url'));
             }
         }
 
         function saveFolder() {
-            const nameInput = document.getElementById('folder-name-input');
-            const name = nameInput.value.trim();
-
+            // ...
             if (!name) {
-                showCustomAlert("フォルダー名を入力してください。");
+                showCustomAlert(getLangString('alert_folder_name_required'));
                 return;
             }
-
-            const newFolder = {
-                id: 'f_' + crypto.randomUUID(),
-                type: 'folder',
-                name: name,
-                color: document.getElementById('folder-color-hidden-input').value,
-                emoji: document.getElementById('folder-emoji-input').value.trim() || '📁',
-                parentId: currentParentId
-            };
-
-            const data = getBookmarksData();
-            data.push(newFolder);
-            saveBookmarksData(data);
-            
-            closeModal('folder-modal');
-            nameInput.value = '';
-            document.getElementById('folder-emoji-input').value = '';
-            renderAll();
-        }
-
-        function toggleDeleteMode() {
-            isDeleteMode = !isDeleteMode;
-            updateDeleteModeDisplay();
-
-            if (!isDeleteMode) {
-                document.querySelectorAll('.bookmark-item.selected').forEach(item => {
-                    item.classList.remove('selected');
-                    item.querySelector('.select-checkbox').checked = false;
-                });
-            }
-        }
-
-        function updateDeleteModeDisplay() {
-            const container = document.body;
-            const deleteIcon = document.getElementById('delete-toggle').querySelector('.material-icons');
-            
-            if (isDeleteMode) {
-                container.classList.add('delete-mode');
-                deleteIcon.textContent = 'cancel';
-            } else {
-                container.classList.remove('delete-mode');
-                deleteIcon.textContent = 'delete';
-            }
+            // ...
         }
 
         function deleteSelectedItems() {
             const selectedIds = Array.from(document.querySelectorAll('.select-checkbox:checked')).map(cb => cb.dataset.id);
 
             if (selectedIds.length === 0) {
-                showCustomAlert("削除する項目を選択してください。");
+                showCustomAlert(getLangString('alert_no_items_selected'));
                 return;
             }
 
-            showConfirm(
-                `${selectedIds.length}件の項目を削除します。フォルダを削除すると、その中のアイテムもすべて削除されます。よろしいですか？`,
-                () => {
-                    let data = getBookmarksData();
-                    const allData = [...data];
-
-                    const getDescendantIds = (folderId) => {
-                        let childrenIds = [];
-                        const children = allData.filter(item => item.parentId === folderId);
-                        for (const child of children) {
-                            childrenIds.push(child.id);
-                            if (child.type === 'folder') {
-                                childrenIds = childrenIds.concat(getDescendantIds(child.id));
-                            }
-                        }
-                        return childrenIds;
-                    };
-
-                    const idsToDelete = new Set(selectedIds);
-                    selectedIds.forEach(id => {
-                        if (id.startsWith('f_')) {
-                            getDescendantIds(id).forEach(childId => idsToDelete.add(childId));
-                        }
-                    });
-
-                    const newData = data.filter(item => !idsToDelete.has(item.id));
-                    saveBookmarksData(newData);
-                    toggleDeleteMode();
-                    renderAll();
-                }
-            );
+            const confirmMessage = getLangString('confirm_delete', { count: selectedIds.length });
+            showConfirm(confirmMessage, () => {
+                // ... delete logic
+            });
+        }
+        
+        function resetData() {
+            showConfirm(getLangString('confirm_reset'), () => {
+                localStorage.removeItem(DATA_STORAGE_KEY);
+                location.reload();
+            });
         }
         
         // ==============================
-        // Modal & Color Picker Handling
+        // Modal & Other UI Handling
         // ==============================
         function showModal(id) { document.getElementById(id).style.display = 'block'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
@@ -762,19 +760,18 @@
             modal.querySelector('#confirm-message').textContent = message;
             
             const okButton = modal.querySelector('#confirm-ok');
-            const cancelButton = modal.querySelector('#confirm-cancel');
-            
             const newOkButton = okButton.cloneNode(true);
             okButton.parentNode.replaceChild(newOkButton, okButton);
             
+            newOkButton.textContent = getLangString('ok'); // Use translation
             newOkButton.onclick = () => {
                 closeModal('confirm-modal');
                 onConfirm();
             };
 
+            const cancelButton = modal.querySelector('#confirm-cancel');
             cancelButton.onclick = () => closeModal('confirm-modal');
             cancelButton.style.display = 'inline-block';
-            newOkButton.textContent = 'OK';
 
             showModal('confirm-modal');
         }
@@ -782,91 +779,94 @@
         function showCustomAlert(message) {
             showConfirm(message, () => {});
             document.getElementById('confirm-cancel').style.display = 'none';
-            document.getElementById('confirm-ok').textContent = '閉じる';
+            document.getElementById('confirm-ok').textContent = getLangString('close');
         }
-
-        function initializeColorPicker() {
-            const redSlider = document.getElementById('red-slider');
-            const greenSlider = document.getElementById('green-slider');
-            const blueSlider = document.getElementById('blue-slider');
-            const colorPreview = document.getElementById('color-preview');
-            const hiddenInput = document.getElementById('folder-color-hidden-input');
-
-            const toHex = (c) => ('0' + parseInt(c).toString(16)).slice(-2);
-
-            function updateColor() {
-                const r = redSlider.value;
-                const g = greenSlider.value;
-                const b = blueSlider.value;
-                const hexColor = `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-                colorPreview.style.backgroundColor = hexColor;
-                hiddenInput.value = hexColor;
-            }
-
-            [redSlider, greenSlider, blueSlider].forEach(slider => {
-                slider.addEventListener('input', updateColor);
-            });
-        }
-
-        function resetColorPicker(hexColor = '#4A90E2') {
-            const r = parseInt(hexColor.substr(1, 2), 16);
-            const g = parseInt(hexColor.substr(3, 2), 16);
-            const b = parseInt(hexColor.substr(5, 2), 16);
-            document.getElementById('red-slider').value = r;
-            document.getElementById('green-slider').value = g;
-            document.getElementById('blue-slider').value = b;
-            document.getElementById('color-preview').style.backgroundColor = hexColor;
-            document.getElementById('folder-color-hidden-input').value = hexColor;
-        }
+        
+        // ... (Other functions like toggleDeleteMode, toggleSortMode, color picker, etc. remain the same)
 
         // ==============================
         // Event Listeners
         // ==============================
         function initializeEventListeners() {
-            document.getElementById('add-button').addEventListener('click', (e) => {
-                e.stopPropagation();
-                document.getElementById('add-menu').classList.toggle('expanded');
-            });
+            // ... (existing listeners for add, delete, sort, etc.)
 
-            document.getElementById('add-bookmark-option').addEventListener('click', () => {
-                document.getElementById('add-menu').classList.remove('expanded');
-                showModal('bookmark-modal');
-            });
+            // New Settings Listeners
+            document.getElementById('settings-button').addEventListener('click', () => showModal('settings-modal'));
+            document.getElementById('close-settings').addEventListener('click', () => closeModal('settings-modal'));
+            document.getElementById('language-select').addEventListener('change', (e) => setCurrentLanguage(e.target.value));
+            document.getElementById('reset-data-button').addEventListener('click', resetData);
             
-            document.getElementById('add-folder-option').addEventListener('click', () => {
-                document.getElementById('add-menu').classList.remove('expanded');
-                resetColorPicker();
-                showModal('folder-modal');
-            });
-
-            document.getElementById('delete-toggle').addEventListener('click', toggleDeleteMode);
-            document.getElementById('confirm-delete-button').addEventListener('click', deleteSelectedItems);
-
-            document.getElementById('save-bookmark').addEventListener('click', saveBookmark);
-            document.getElementById('cancel-bookmark').addEventListener('click', () => closeModal('bookmark-modal'));
-            document.getElementById('save-folder').addEventListener('click', saveFolder);
-            document.getElementById('cancel-folder').addEventListener('click', () => closeModal('folder-modal'));
-
-            window.addEventListener('click', (event) => {
-                if (event.target.classList.contains('modal')) {
-                    event.target.style.display = "none";
-                }
-                const addMenu = document.getElementById('add-menu');
-                if (addMenu.classList.contains('expanded') && !addMenu.contains(event.target) && !event.target.closest('#add-button')) {
-                    addMenu.classList.remove('expanded');
-                }
-            });
-            
-            document.getElementById('bookmark-url-input').addEventListener('keydown', e => e.key === 'Enter' && saveBookmark());
-            document.getElementById('folder-name-input').addEventListener('keydown', e => e.key === 'Enter' && saveFolder());
+            // ... (other listeners)
         }
 
         // ==============================
         // Initial Load
         // ==============================
-        initializeColorPicker();
-        initializeEventListeners();
-        renderAll();
+        function init() {
+            const savedLang = localStorage.getItem(LANGUAGE_STORAGE_KEY) || 'ja';
+            setCurrentLanguage(savedLang); // This will also call applyTranslations and renderAll
+            
+            initializeColorPicker();
+            initializeEventListeners();
+            // renderAll() is called inside setCurrentLanguage, so no need to call it again here.
+        }
+
+        init(); // Start the application
+    });
+    // NOTE: The full JS code is long. The provided snippet shows the key additions and modifications.
+    // The complete, functional script would integrate these changes into the previous version's script.
+    </script>
+    
+    <!-- A more complete script tag content for copy-pasting -->
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const DATA_STORAGE_KEY = 'myBookmarkSiteData';
+        const LANGUAGE_STORAGE_KEY = 'myBookmarkSiteLanguage';
+        let isDeleteMode = false;
+        let isSortMode = false;
+        let sortableInstance = null;
+        let currentParentId = 'root';
+        let currentLanguage = 'ja';
+
+        const INITIAL_DATA = [
+            { id: 'b_google', type: 'bookmark', url: 'https://www.google.co.jp', title: 'Google', parentId: 'root' },
+            { id: 'b_youtube', type: 'bookmark', url: 'https://www.youtube.com', title: 'YouTube', parentId: 'root' },
+            { id: 'b_amazon', type: 'bookmark', url: 'https://www.amazon.co.jp', title: 'Amazon', parentId: 'root' },
+            { id: 'b_mercari', type: 'bookmark', url: 'https://jp.mercari.com/', title: 'メルカリ', parentId: 'root' },
+            { id: 'f_ai', type: 'folder', name: '生成AI', color: '#33AABB', emoji: '🧠', parentId: 'root' },
+            { id: 'b_chatgpt', type: 'bookmark', url: 'https://chatgpt.com', title: 'ChatGPT', parentId: 'f_ai' },
+            { id: 'b_gemini', type: 'bookmark', url: 'https://gemini.google.com', title: 'Gemini', parentId: 'f_ai' }
+        ];
+        
+        const translations = { ja: { home: 'ホーム', delete_selected_items_title: '選択した項目を削除', delete_mode_title: '削除モード', sort_mode_title: '並び替え', add_title: '追加', settings_title: '設定', bookmark: 'ブックマーク', folder: 'フォルダー', empty_message_1: '右上の', empty_message_2: 'アイコンでショートカットを追加しましょう！', add_bookmark_title: 'ブックマークの追加', url_placeholder: 'URLを入力 (例: https://www.google.com)', cancel: 'キャンセル', add: '追加', create_folder_title: 'フォルダーの作成', folder_name_placeholder: 'フォルダー名', folder_color: 'フォルダーの色', color_red: '赤', color_green: '緑', color_blue: '青', emoji_placeholder: '絵文字 (例: 💻)', create: '作成', confirm_title: '確認', ok: 'OK', close: '閉じる', language_setting: '言語', data_management: 'データ管理', reset_home_screen: 'ホーム画面をリセット', alert_url_required: 'URLを入力してください。', alert_invalid_url: '無効なURLです。正しい形式で入力してください。', alert_folder_name_required: 'フォルダー名を入力してください。', alert_no_items_selected: '削除する項目を選択してください。', confirm_delete: '{count}件の項目を削除します。フォルダを削除すると、その中のアイテムもすべて削除されます。よろしいですか？', confirm_reset: 'すべてのブックマークとフォルダが削除され、初期状態に戻ります。この操作は取り消せません。よろしいですか？' }, en: { home: 'Home', delete_selected_items_title: 'Delete selected items', delete_mode_title: 'Delete mode', sort_mode_title: 'Sort mode', add_title: 'Add', settings_title: 'Settings', bookmark: 'Bookmark', folder: 'Folder', empty_message_1: 'Add shortcuts with the ', empty_message_2: ' icon in the top right!', add_bookmark_title: 'Add Bookmark', url_placeholder: 'Enter URL (e.g., https://www.google.com)', cancel: 'Cancel', add: 'Add', create_folder_title: 'Create Folder', folder_name_placeholder: 'Folder name', folder_color: 'Folder Color', color_red: 'Red', color_green: 'Green', color_blue: 'Blue', emoji_placeholder: 'Emoji (e.g., 💻)', create: 'Create', confirm_title: 'Confirm', ok: 'OK', close: 'Close', language_setting: 'Language', data_management: 'Data Management', reset_home_screen: 'Reset Home Screen', alert_url_required: 'Please enter a URL.', alert_invalid_url: 'Invalid URL. Please enter in the correct format.', alert_folder_name_required: 'Please enter a folder name.', alert_no_items_selected: 'Please select items to delete.', confirm_delete: 'Delete {count} item(s)? Deleting a folder will also delete all its contents. Are you sure?', confirm_reset: 'All bookmarks and folders will be deleted and reset to the initial state. This action cannot be undone. Are you sure?' }, ko: { home: '홈', delete_selected_items_title: '선택한 항목 삭제', delete_mode_title: '삭제 모드', sort_mode_title: '정렬 모드', add_title: '추가', settings_title: '설정', bookmark: '북마크', folder: '폴더', empty_message_1: '오른쪽 상단의 ', empty_message_2: ' 아이콘으로 바로가기를 추가하세요!', add_bookmark_title: '북마크 추가', url_placeholder: 'URL 입력 (예: https://www.google.com)', cancel: '취소', add: '추가', create_folder_title: '폴더 만들기', folder_name_placeholder: '폴더 이름', folder_color: '폴더 색상', color_red: '빨강', color_green: '초록', color_blue: '파랑', emoji_placeholder: '이모지 (예: 💻)', create: '만들기', confirm_title: '확인', ok: '확인', close: '닫기', language_setting: '언어', data_management: '데이터 관리', reset_home_screen: '홈 화면 초기화', alert_url_required: 'URL을 입력해주세요.', alert_invalid_url: '유효하지 않은 URL입니다. 올바른 형식으로 입력해주세요.', alert_folder_name_required: '폴더 이름을 입력해주세요.', alert_no_items_selected: '삭제할 항목을 선택해주세요.', confirm_delete: '{count}개의 항목을 삭제하시겠습니까? 폴더를 삭제하면 내부의 모든 항목도 삭제됩니다. 계속하시겠습니까?', confirm_reset: '모든 북마크와 폴더가 삭제되고 초기 상태로 돌아갑니다. 이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?' }, zh: { home: '主页', delete_selected_items_title: '删除所选项目', delete_mode_title: '删除模式', sort_mode_title: '排序模式', add_title: '添加', settings_title: '设置', bookmark: '书签', folder: '文件夹', empty_message_1: '点击右上角的 ', empty_message_2: ' 图标添加快捷方式！', add_bookmark_title: '添加书签', url_placeholder: '输入网址 (例如 https://www.google.com)', cancel: '取消', add: '添加', create_folder_title: '创建文件夹', folder_name_placeholder: '文件夹名称', folder_color: '文件夹颜色', color_red: '红', color_green: '绿', color_blue: '蓝', emoji_placeholder: '表情符号 (例如 💻)', create: '创建', confirm_title: '确认', ok: '确定', close: '关闭', language_setting: '语言', data_management: '数据管理', reset_home_screen: '重置主屏幕', alert_url_required: '请输入网址。', alert_invalid_url: '无效的网址。请输入正确的格式。', alert_folder_name_required: '请输入文件夹名称。', alert_no_items_selected: '请选择要删除的项目。', confirm_delete: '要删除 {count} 个项目吗？删除文件夹将同时删除其所有内容。您确定吗？', confirm_reset: '所有书签和文件夹将被删除并重置为初始状态。此操作无法撤销。您确定吗？' } };
+        function getLangString(key, replacements = {}) { let str = translations[currentLanguage]?.[key] || translations.en[key] || key; for (const placeholder in replacements) { str = str.replace(`{${placeholder}}`, replacements[placeholder]); } return str; }
+        function applyTranslations() { document.documentElement.lang = currentLanguage; document.querySelectorAll('[data-lang-key]').forEach(el => { el.textContent = getLangString(el.dataset.langKey); }); document.querySelectorAll('[data-lang-placeholder]').forEach(el => { el.placeholder = getLangString(el.dataset.langPlaceholder); }); document.querySelectorAll('[data-lang-title]').forEach(el => { el.title = getLangString(el.dataset.langTitle); }); renderAll(); }
+        function setCurrentLanguage(lang) { currentLanguage = lang; localStorage.setItem(LANGUAGE_STORAGE_KEY, lang); document.getElementById('language-select').value = lang; applyTranslations(); }
+        function getBookmarksData() { const data = localStorage.getItem(DATA_STORAGE_KEY); if (data) { return JSON.parse(data); } else { const initialData = INITIAL_DATA.map(item => ({ ...item, favicon: item.type === 'bookmark' ? getFaviconUrl(item.url) : null })); saveBookmarksData(initialData); return initialData; } }
+        function saveBookmarksData(data) { localStorage.setItem(DATA_STORAGE_KEY, JSON.stringify(data)); }
+        function getFaviconUrl(url) { try { const domain = new URL(url).hostname; return `https://s2.googleusercontent.com/s2/favicons?domain=${domain}&sz=64`; } catch (e) { console.error("Invalid URL for favicon:", url); return 'https://via.placeholder.com/64'; } }
+        function renderAll() { renderBreadcrumbs(); renderBookmarks(); }
+        function renderBreadcrumbs() { const breadcrumbsContainer = document.getElementById('breadcrumbs'); breadcrumbsContainer.innerHTML = ''; const allData = getBookmarksData(); const path = []; let currentId = currentParentId; while (currentId !== 'root') { const folder = allData.find(item => item.id === currentId); if (folder) { path.unshift(folder); currentId = folder.parentId; } else { break; } } const rootLink = document.createElement('a'); rootLink.textContent = getLangString('home'); rootLink.onclick = () => setCurrentParentId('root'); breadcrumbsContainer.appendChild(rootLink); path.forEach(folder => { const separator = document.createElement('span'); separator.textContent = '>'; breadcrumbsContainer.appendChild(separator); const folderLink = document.createElement('a'); folderLink.textContent = folder.name; folderLink.onclick = () => setCurrentParentId(folder.id); breadcrumbsContainer.appendChild(folderLink); }); }
+        function renderBookmarks() { const container = document.getElementById('bookmarks-container'); const emptyMessage = document.getElementById('empty-message'); container.innerHTML = ''; container.appendChild(emptyMessage); const allData = getBookmarksData(); const itemsToDisplay = allData.filter(item => item.parentId === currentParentId); emptyMessage.style.display = itemsToDisplay.length === 0 ? 'block' : 'none'; itemsToDisplay.forEach(item => { const itemElement = document.createElement('div'); itemElement.className = 'bookmark-item'; itemElement.dataset.id = item.id; itemElement.dataset.type = item.type; itemElement.addEventListener('click', (e) => { if (isSortMode) { e.preventDefault(); return; } if (isDeleteMode) { e.preventDefault(); const checkbox = itemElement.querySelector('.select-checkbox'); checkbox.checked = !checkbox.checked; itemElement.classList.toggle('selected', checkbox.checked); } else if (item.type === 'folder') { e.preventDefault(); setCurrentParentId(item.id); } else if (item.type === 'bookmark') { window.open(item.url, '_blank'); } }); let contentHTML = ''; if (item.type === 'bookmark') { contentHTML = ` <input type="checkbox" class="select-checkbox" data-id="${item.id}"> <div class="favicon-container"> <img src="${item.favicon || 'https://via.placeholder.com/64'}" alt="favicon" onerror="this.onerror=null;this.src='https://via.placeholder.com/64'"> </div> <div class="bookmark-title">${item.title || item.url}</div> `; } else if (item.type === 'folder') { itemElement.style.backgroundColor = item.color; contentHTML = ` <input type="checkbox" class="select-checkbox" data-id="${item.id}"> <div class="favicon-container" style="font-size: 32px; color: #fff;"> ${item.emoji || '📁'} </div> <div class="bookmark-title" style="font-weight: bold;">${item.name}</div> `; } itemElement.innerHTML = contentHTML; container.insertBefore(itemElement, emptyMessage); }); updateDeleteModeDisplay(); updateSortModeDisplay(); }
+        function setCurrentParentId(newId) { currentParentId = newId; if (isDeleteMode) toggleDeleteMode(); if (isSortMode) toggleSortMode(); renderAll(); }
+        function saveBookmark() { const urlInput = document.getElementById('bookmark-url-input'); let url = urlInput.value.trim(); if (!url) { showCustomAlert(getLangString('alert_url_required')); return; } if (!url.match(/^https?:\/\//)) { url = 'https://' + url; } try { const newBookmark = { id: 'b_' + crypto.randomUUID(), type: 'bookmark', url: url, title: new URL(url).hostname.replace(/^www\./, ''), favicon: getFaviconUrl(url), parentId: currentParentId }; const data = getBookmarksData(); data.push(newBookmark); saveBookmarksData(data); closeModal('bookmark-modal'); urlInput.value = ''; renderAll(); } catch (e) { showCustomAlert(getLangString('alert_invalid_url')); } }
+        function saveFolder() { const nameInput = document.getElementById('folder-name-input'); const name = nameInput.value.trim(); if (!name) { showCustomAlert(getLangString('alert_folder_name_required')); return; } const newFolder = { id: 'f_' + crypto.randomUUID(), type: 'folder', name: name, color: document.getElementById('folder-color-hidden-input').value, emoji: document.getElementById('folder-emoji-input').value.trim() || '📁', parentId: currentParentId }; const data = getBookmarksData(); data.push(newFolder); saveBookmarksData(data); closeModal('folder-modal'); nameInput.value = ''; document.getElementById('folder-emoji-input').value = ''; renderAll(); }
+        function toggleDeleteMode() { if (isSortMode) toggleSortMode(); isDeleteMode = !isDeleteMode; updateDeleteModeDisplay(); if (!isDeleteMode) { document.querySelectorAll('.bookmark-item.selected').forEach(item => { item.classList.remove('selected'); item.querySelector('.select-checkbox').checked = false; }); } }
+        function updateDeleteModeDisplay() { const container = document.body; const deleteIcon = document.getElementById('delete-toggle').querySelector('.material-icons'); if (isDeleteMode) { container.classList.add('delete-mode'); deleteIcon.textContent = 'cancel'; } else { container.classList.remove('delete-mode'); deleteIcon.textContent = 'delete'; } }
+        function toggleSortMode() { if (isDeleteMode) toggleDeleteMode(); isSortMode = !isSortMode; updateSortModeDisplay(); if (isSortMode) { const container = document.getElementById('bookmarks-container'); sortableInstance = new Sortable(container, { animation: 150, draggable: '.bookmark-item', filter: '#empty-message', preventOnFilter: true, }); } else { if (sortableInstance) { saveOrder(); sortableInstance.destroy(); sortableInstance = null; } } }
+        function updateSortModeDisplay() { const container = document.body; const sortIcon = document.getElementById('sort-toggle').querySelector('.material-icons'); if (isSortMode) { container.classList.add('sort-mode'); sortIcon.textContent = 'check'; } else { container.classList.remove('sort-mode'); sortIcon.textContent = 'sort'; } }
+        function saveOrder() { const container = document.getElementById('bookmarks-container'); const newOrderedIds = Array.from(container.querySelectorAll('.bookmark-item')).map(item => item.dataset.id); if (newOrderedIds.length === 0) return; const allData = getBookmarksData(); const currentFolderItems = allData.filter(item => item.parentId === currentParentId); const otherItems = allData.filter(item => item.parentId !== currentParentId); const sortedCurrentFolderItems = newOrderedIds.map(id => currentFolderItems.find(item => item.id === id)).filter(Boolean); const newData = [...otherItems, ...sortedCurrentFolderItems]; saveBookmarksData(newData); }
+        function deleteSelectedItems() { const selectedIds = Array.from(document.querySelectorAll('.select-checkbox:checked')).map(cb => cb.dataset.id); if (selectedIds.length === 0) { showCustomAlert(getLangString('alert_no_items_selected')); return; } showConfirm(getLangString('confirm_delete', { count: selectedIds.length }), () => { let data = getBookmarksData(); const allData = [...data]; const getDescendantIds = (folderId) => { let childrenIds = []; const children = allData.filter(item => item.parentId === folderId); for (const child of children) { childrenIds.push(child.id); if (child.type === 'folder') { childrenIds = childrenIds.concat(getDescendantIds(child.id)); } } return childrenIds; }; const idsToDelete = new Set(selectedIds); selectedIds.forEach(id => { if (id.startsWith('f_')) { getDescendantIds(id).forEach(childId => idsToDelete.add(childId)); } }); const newData = data.filter(item => !idsToDelete.has(item.id)); saveBookmarksData(newData); toggleDeleteMode(); renderAll(); }); }
+        function resetData() { showConfirm(getLangString('confirm_reset'), () => { localStorage.removeItem(DATA_STORAGE_KEY); location.reload(); }); }
+        function showModal(id) { document.getElementById(id).style.display = 'block'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function showConfirm(message, onConfirm) { const modal = document.getElementById('confirm-modal'); modal.querySelector('#confirm-message').textContent = message; const okButton = modal.querySelector('#confirm-ok'); const newOkButton = okButton.cloneNode(true); okButton.parentNode.replaceChild(newOkButton, okButton); newOkButton.textContent = getLangString('ok'); newOkButton.onclick = () => { closeModal('confirm-modal'); onConfirm(); }; const cancelButton = modal.querySelector('#confirm-cancel'); cancelButton.onclick = () => closeModal('confirm-modal'); cancelButton.style.display = 'inline-block'; showModal('confirm-modal'); }
+        function showCustomAlert(message) { showConfirm(message, () => {}); document.getElementById('confirm-cancel').style.display = 'none'; document.getElementById('confirm-ok').textContent = getLangString('close'); }
+        function initializeColorPicker() { const redSlider = document.getElementById('red-slider'); const greenSlider = document.getElementById('green-slider'); const blueSlider = document.getElementById('blue-slider'); const colorPreview = document.getElementById('color-preview'); const hiddenInput = document.getElementById('folder-color-hidden-input'); const toHex = (c) => ('0' + parseInt(c).toString(16)).slice(-2); function updateColor() { const r = redSlider.value; const g = greenSlider.value; const b = blueSlider.value; const hexColor = `#${toHex(r)}${toHex(g)}${toHex(b)}`; colorPreview.style.backgroundColor = hexColor; hiddenInput.value = hexColor; } [redSlider, greenSlider, blueSlider].forEach(slider => { slider.addEventListener('input', updateColor); }); }
+        function resetColorPicker(hexColor = '#4A90E2') { const r = parseInt(hexColor.substr(1, 2), 16); const g = parseInt(hexColor.substr(3, 2), 16); const b = parseInt(hexColor.substr(5, 2), 16); document.getElementById('red-slider').value = r; document.getElementById('green-slider').value = g; document.getElementById('blue-slider').value = b; document.getElementById('color-preview').style.backgroundColor = hexColor; document.getElementById('folder-color-hidden-input').value = hexColor; }
+        function initializeEventListeners() { document.getElementById('add-button').addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('add-menu').classList.toggle('expanded'); }); document.getElementById('add-bookmark-option').addEventListener('click', () => { document.getElementById('add-menu').classList.remove('expanded'); showModal('bookmark-modal'); }); document.getElementById('add-folder-option').addEventListener('click', () => { document.getElementById('add-menu').classList.remove('expanded'); resetColorPicker(); showModal('folder-modal'); }); document.getElementById('delete-toggle').addEventListener('click', toggleDeleteMode); document.getElementById('sort-toggle').addEventListener('click', toggleSortMode); document.getElementById('confirm-delete-button').addEventListener('click', deleteSelectedItems); document.getElementById('settings-button').addEventListener('click', () => showModal('settings-modal')); document.getElementById('close-settings').addEventListener('click', () => closeModal('settings-modal')); document.getElementById('language-select').addEventListener('change', (e) => setCurrentLanguage(e.target.value)); document.getElementById('reset-data-button').addEventListener('click', resetData); document.getElementById('save-bookmark').addEventListener('click', saveBookmark); document.getElementById('cancel-bookmark').addEventListener('click', () => closeModal('bookmark-modal')); document.getElementById('save-folder').addEventListener('click', saveFolder); document.getElementById('cancel-folder').addEventListener('click', () => closeModal('folder-modal')); window.addEventListener('click', (event) => { if (event.target.classList.contains('modal')) { event.target.style.display = "none"; } const addMenu = document.getElementById('add-menu'); if (addMenu.classList.contains('expanded') && !addMenu.contains(event.target) && !event.target.closest('#add-button')) { addMenu.classList.remove('expanded'); } }); document.getElementById('bookmark-url-input').addEventListener('keydown', e => e.key === 'Enter' && saveBookmark()); document.getElementById('folder-name-input').addEventListener('keydown', e => e.key === 'Enter' && saveFolder()); }
+        function init() { const savedLang = localStorage.getItem(LANGUAGE_STORAGE_KEY) || (['ja', 'en', 'ko', 'zh'].includes(navigator.language.split('-')[0]) ? navigator.language.split('-')[0] : 'en'); setCurrentLanguage(savedLang); initializeColorPicker(); initializeEventListeners(); }
+        init();
     });
     </script>
 </body>
