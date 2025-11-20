@@ -7,16 +7,15 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
+        /* ... (前回のCSSは省略、変更なし) ... */
         :root {
             --bg-color: #f4f7f8;
             --text-color: #333;
             --card-bg: #fff;
             --hover-bg: #e9e9e9;
             --shadow-color: rgba(0, 0, 0, 0.1);
-            /* --- アクセントカラーとして扱う --- */
             --primary-color: #4A90E2; 
             --primary-hover-color: #3a7fd4; 
-            /* --------------------------------- */
             --danger-color: #d9534f;
             --selected-bg: #ffe0b2;
         }
@@ -41,7 +40,6 @@
             transition: background-color 0.3s, color 0.3s;
         }
 
-        /* ヘッダー */
         header {
             display: flex;
             justify-content: space-between;
@@ -62,7 +60,6 @@
             align-items: center;
         }
 
-        /* パンくずリスト */
         #breadcrumbs {
             display: flex;
             align-items: center;
@@ -104,30 +101,25 @@
             font-size: 24px;
         }
 
-        /* 削除確認ボタン */
         #confirm-delete-button {
-            display: none; /* 初期は非表示 */
+            display: none; 
             color: var(--danger-color);
         }
         .delete-mode #confirm-delete-button {
-            display: flex; /* 削除モード時に表示 */
+            display: flex; 
         }
         
-        /* --- ここからアドレスバーのスタイルを追加/修正 --- */
-
-        /* アドレスバーのコンテナ */
         #address-bar-container {
             display: flex;
             align-items: center;
             margin-bottom: 20px;
             background-color: var(--card-bg);
-            border-radius: 30px; /* 全体として両端を丸く見せるための設定 */
+            border-radius: 30px; 
             box-shadow: 0 2px 4px var(--shadow-color);
             padding: 5px;
             transition: box-shadow 0.2s;
         }
         
-        /* URL入力欄 */
         #url-input {
             flex-grow: 1;
             padding: 10px 15px;
@@ -138,11 +130,10 @@
             outline: none;
         }
         
-        /* 進むボタンのスタイル */
         #go-button {
             background-color: var(--primary-color);
             color: white;
-            margin-left: 5px; /* 入力欄との間隔 */
+            margin-left: 5px; 
             padding: 12px;
             width: 48px; 
             height: 48px; 
@@ -150,7 +141,7 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
             transition: background-color 0.2s, transform 0.2s;
             flex-shrink: 0; 
-            margin-right: 5px; /* 右側にゆとり */
+            margin-right: 5px; 
         }
 
         #go-button:hover {
@@ -158,10 +149,6 @@
             transform: scale(1.05);
         }
 
-        /* --- ここまでアドレスバーのスタイル --- */
-
-
-        /* 追加メニュー */
         #add-menu {
             overflow: hidden;
             height: 0;
@@ -194,7 +181,6 @@
             background-color: var(--hover-bg);
         }
 
-        /* ブックマークグリッド */
         #bookmarks-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -227,7 +213,6 @@
             color: #fff;
         }
 
-        /* 編集ボタン（3点リーダー） */
         .edit-button {
             position: absolute;
             top: 5px;
@@ -247,14 +232,12 @@
         .edit-button:hover {
             opacity: 1.0;
         }
-        /* 削除モード中は非表示、並び替えモード中は無効化 */
         .delete-mode .edit-button,
         .sort-mode .edit-button {
             display: none;
         }
 
 
-        /* 削除モード */
         .delete-mode .select-checkbox {
             display: block;
         }
@@ -272,7 +255,6 @@
             cursor: pointer;
         }
         
-        /* 並び替えモード */
         @keyframes shake {
             0%, 100% { transform: rotate(0); }
             25% { transform: rotate(-1.5deg); }
@@ -332,11 +314,10 @@
              vertical-align: bottom;
         }
 
-        /* アイテムメニュー (3点リーダー押下時) */
         #item-menu {
             display: none;
             position: fixed;
-            z-index: 101; /* モーダルより手前 */
+            z-index: 101; 
             background-color: var(--card-bg);
             box-shadow: 0 4px 8px var(--shadow-color);
             border-radius: 6px;
@@ -355,7 +336,6 @@
             background-color: var(--hover-bg);
         }
 
-        /* モーダル */
         .modal {
             display: none;
             position: fixed;
@@ -368,7 +348,6 @@
             background-color: rgba(0, 0, 0, 0.6);
             animation: fadeIn 0.3s;
         }
-        /* チュートリアルモーダルのz-indexを上げておく */
         #tutorial-modal {
              z-index: 102;
         }
@@ -400,7 +379,6 @@
             font-size: 1em;
         }
         
-        /* 設定セクション内のスタイル（フォルダー/アクセントカラーピッカー用） */
         .settings-section .color-picker-group {
              display: flex;
              align-items: center;
@@ -408,7 +386,6 @@
              width: 100%;
         }
         
-        /* フォルダ/アクセントカラーピッカーのラッパーに統一的なスタイルを適用 */
         #custom-color-picker-wrapper, #edit-color-picker-wrapper, #accent-color-picker-wrapper, #tutorial-color-picker-wrapper {
              padding: 15px;
              border: 1px solid var(--hover-bg);
@@ -454,13 +431,11 @@
             margin-top: 10px;
         }
 
-        /* 編集モーダルの特定要素の表示制御 */
         .edit-type-bookmark .folder-settings,
         .edit-type-folder .bookmark-settings {
             display: none;
         }
         
-        /* 移動モーダル内のフォルダーリスト */
         #folder-list {
             margin-top: 15px;
             max-height: 300px;
@@ -491,14 +466,20 @@
             pointer-events: none;
         }
         
-        /* ★モード制御のためのCSSを更新/追加★ */
+        /* ★Tinyモードの修正 (アドレスバーと設定ボタンのみ)★ */
         .tiny-mode #breadcrumbs,
-        .tiny-mode #header-right,
+        .tiny-mode #delete-toggle,
+        .tiny-mode #sort-toggle,
+        .tiny-mode #add-button, /* 追加ボタンも非表示 */
+        .tiny-mode #confirm-delete-button,
         .tiny-mode #add-menu,
-        .tiny-mode .bookmark-item .edit-button { 
+        .tiny-mode .bookmark-item .edit-button,
+        .tiny-mode #bookmarks-container { 
             display: none !important; 
         }
-
+        
+        /* Tinyモードでsettings-buttonを表示維持するため、header-rightはdisplay: flexのまま */
+        
         /* チュートリアルステップのスタイル */
         .tutorial-step {
             display: none;
@@ -506,7 +487,6 @@
         .tutorial-step.active {
             display: block;
         }
-
     </style>
 </head>
 <body data-mode="ultimate">
@@ -528,6 +508,7 @@
             <button id="add-button" class="icon-button" data-lang-title="add_title">
                 <span class="material-icons">add</span>
             </button>
+            <!-- settings-button のみ Tiny モードで表示を維持 -->
              <button id="settings-button" class="icon-button" data-lang-title="settings_title">
                 <span class="material-icons">settings</span>
             </button>
@@ -558,7 +539,6 @@
         </div>
     </main>
     
-    <!-- アイテムメニュー -->
     <div id="item-menu">
         <div class="item-menu-option" id="menu-edit">
             <span class="material-icons">edit</span>
@@ -570,8 +550,7 @@
         </div>
     </div>
 
-    <!-- Modals -->
-    <!-- ブックマーク追加モーダル -->
+    <!-- Modals (省略) -->
     <div id="bookmark-modal" class="modal">
         <div class="modal-content">
             <h2 data-lang-key="add_bookmark_title">ブックマークの追加</h2>
@@ -582,8 +561,6 @@
             </div>
         </div>
     </div>
-
-    <!-- フォルダー作成モーダル -->
     <div id="folder-modal" class="modal">
         <div class="modal-content">
             <h2 data-lang-key="create_folder_title">フォルダーの作成</h2>
@@ -617,24 +594,17 @@
             </div>
         </div>
     </div>
-    
-    <!-- 編集モーダル（ブックマーク/フォルダー共通） -->
     <div id="edit-modal" class="modal">
         <div class="modal-content">
             <h2 id="edit-title" data-lang-key="edit_item_title">項目の編集</h2>
             <input type="hidden" id="edit-id-input">
             <input type="hidden" id="edit-type-input">
-
-            <!-- ブックマーク設定 -->
             <div class="bookmark-settings">
                 <input type="text" id="edit-bookmark-title-input" data-lang-placeholder="title_placeholder">
                 <input type="url" id="edit-bookmark-url-input" data-lang-placeholder="url_placeholder" required>
             </div>
-
-            <!-- フォルダー設定 -->
             <div class="folder-settings">
                 <input type="text" id="edit-folder-name-input" data-lang-placeholder="folder_name_placeholder" required>
-                
                 <div id="edit-color-picker-wrapper">
                     <input type="hidden" id="edit-folder-color-hidden-input" value="#4A90E2">
                     <label data-lang-key="folder_color">フォルダーの色</label>
@@ -654,36 +624,25 @@
                         </div>
                     </div>
                 </div>
-                
                 <input type="text" id="edit-folder-emoji-input" data-lang-placeholder="emoji_placeholder">
                 <button id="reset-edit-folder-color" class="modal-button secondary" data-lang-key="reset_color">色をリセット</button>
             </div>
-            
             <div class="modal-buttons">
                 <button class="modal-button secondary" id="cancel-edit" data-lang-key="cancel">キャンセル</button>
                 <button class="modal-button primary" id="save-edit" data-lang-key="save">保存</button>
             </div>
         </div>
     </div>
-    
-    <!-- 移動モーダル -->
     <div id="move-modal" class="modal">
         <div class="modal-content">
             <h2 data-lang-key="move_item_title">移動先を選択</h2>
             <input type="hidden" id="move-item-id">
-            
-            <div id="folder-list">
-                <!-- フォルダーリストがここにレンダリングされる -->
-            </div>
-            
+            <div id="folder-list"></div>
             <div class="modal-buttons">
                 <button class="modal-button secondary" id="cancel-move" data-lang-key="cancel">キャンセル</button>
             </div>
         </div>
     </div>
-
-
-    <!-- 確認モーダル -->
     <div id="confirm-modal" class="modal">
         <div class="modal-content">
             <h2 id="confirm-title" data-lang-key="confirm_title">確認</h2>
@@ -694,13 +653,9 @@
             </div>
         </div>
     </div>
-
-    <!-- 設定モーダル -->
     <div id="settings-modal" class="modal">
         <div class="modal-content">
             <h2 data-lang-key="settings_title">設定</h2>
-            
-            <!-- ★アクセントカラー設定 (RGBスライダーを使用)★ -->
             <div class="settings-section">
                 <div id="accent-color-picker-wrapper">
                     <input type="hidden" id="accent-color-hidden-input" value="#4A90E2">
@@ -723,8 +678,6 @@
                 </div>
                 <button id="reset-accent-color" class="modal-button secondary" data-lang-key="reset_color">色をリセット</button>
             </div>
-            <!-- ★アクセントカラー設定ここまで★ -->
-            
             <div class="settings-section">
                 <label for="language-select" data-lang-key="language_setting">言語</label>
                 <select id="language-select">
@@ -743,8 +696,8 @@
             </div>
         </div>
     </div>
-    
-    <!-- ★チュートリアルモーダルを更新★ -->
+
+    <!-- ★チュートリアルモーダルを修正★ -->
     <div id="tutorial-modal" class="modal">
         <div class="modal-content">
             <h2 id="tutorial-step-title" data-lang-key="welcome_title">ようこそ！</h2>
@@ -760,7 +713,7 @@
                     <option value="zh">中文</option>
                 </select>
                 <div class="modal-buttons" style="margin-top: 20px;">
-                    <button class="modal-button primary" id="next-to-usage" data-lang-key="next">次へ</button>
+                    <button class="modal-button primary" data-step-next="1" data-lang-key="next">次へ</button>
                 </div>
             </div>
 
@@ -770,8 +723,8 @@
                 <p data-lang-key="tutorial_message_2"><b>アドレスバー</b>にURLやキーワードを入力して、すぐにアクセス/検索ができます。</p>
                 <p id="tutorial-ultimate-feature" data-lang-key="tutorial_ultimate_feature" style="margin-top: 15px;">右上の<span class="material-icons" style="font-size: 1.2em; vertical-align: middle;">add</span>アイコンからブックマークやフォルダーを追加し、ホーム画面をカスタマイズしましょう！</p>
                 <div class="modal-buttons" style="margin-top: 20px;">
-                    <button class="modal-button secondary" id="prev-to-language" data-lang-key="back">戻る</button>
-                    <button class="modal-button primary" id="next-to-color" data-lang-key="next">次へ</button>
+                    <button class="modal-button secondary" data-step-prev="2" data-lang-key="back">戻る</button>
+                    <button class="modal-button primary" data-step-next="2" data-lang-key="next">次へ</button>
                 </div>
             </div>
 
@@ -801,7 +754,7 @@
                 <button id="reset-tutorial-color" class="modal-button secondary" data-lang-key="reset_color">色をリセット</button>
 
                 <div class="modal-buttons" style="margin-top: 20px;">
-                    <button class="modal-button secondary" id="prev-to-usage" data-lang-key="back">戻る</button>
+                    <button class="modal-button secondary" data-step-prev="3" data-lang-key="back">戻る</button>
                     <button class="modal-button primary" id="close-tutorial" data-lang-key="start_using">使い始める</button>
                 </div>
             </div>
@@ -897,11 +850,9 @@
             document.querySelectorAll('[data-lang-placeholder]').forEach(el => { el.placeholder = getLangString(el.dataset.langPlaceholder); }); 
             document.querySelectorAll('[data-lang-title]').forEach(el => { el.title = getLangString(el.dataset.langTitle); }); 
             
-            // チュートリアル挨拶文の更新 (チュートリアルモーダルが表示されていない場合でも安全)
             const greetingEl = document.getElementById('tutorial-greeting');
             if (greetingEl) greetingEl.textContent = getLangString('hello');
             
-            // TinyモードでのUltimate機能の説明非表示
             const ultimateFeatureEl = document.getElementById('tutorial-ultimate-feature');
             if (ultimateFeatureEl) {
                 ultimateFeatureEl.style.display = currentMode === 'tiny' ? 'none' : 'block';
@@ -1015,9 +966,14 @@
             const emptyMessage = document.getElementById('empty-message'); 
             container.innerHTML = ''; 
             container.appendChild(emptyMessage); 
+            
+            if (currentMode === 'tiny') {
+                emptyMessage.style.display = 'none';
+                return;
+            }
+
             const allData = getBookmarksData(); 
             const itemsToDisplay = allData.filter(item => item.parentId === currentParentId); 
-            const isTinyMode = currentMode === 'tiny';
             
             itemsToDisplay.sort((a, b) => {
                 if (a.type === 'folder' && b.type !== 'folder') return -1;
@@ -1040,9 +996,7 @@
                 editButton.addEventListener('click', (e) => {
                     e.stopPropagation(); 
                     if (!isDeleteMode && !isSortMode) {
-                        if (!isTinyMode) { 
-                            showItemMenu(item.id, e.target);
-                        }
+                        showItemMenu(item.id, e.target);
                     }
                 });
                 itemElement.appendChild(editButton);
@@ -1504,14 +1458,10 @@
             });
             document.getElementById('tutorial-step-title').textContent = getLangString('welcome_title') + ` (${currentTutorialStep}/${totalTutorialSteps})`;
 
-            // ステップ1: 言語
             if (currentTutorialStep === 1) {
-                // 言語選択に合わせて挨拶を更新
                 document.getElementById('tutorial-greeting').textContent = getLangString('hello');
             }
-            // ステップ3: 色
             if (currentTutorialStep === 3) {
-                 // 現在のアクセントカラーをチュートリアルピッカーに設定
                 const currentColor = localStorage.getItem(ACCENT_COLOR_STORAGE_KEY) || DEFAULT_ACCENT_COLOR;
                 resetColorPicker(currentColor, 'tutorial-');
             }
@@ -1522,13 +1472,11 @@
 
             if (isFirstVisit) {
                 currentTutorialStep = 1;
-                // 初期言語をブラウザ設定またはデフォルトに設定
                 const savedLang = localStorage.getItem(LANGUAGE_STORAGE_KEY) || (['ja', 'en', 'ko', 'zh'].includes(navigator.language.split('-')[0]) ? navigator.language.split('-')[0] : 'en'); 
                 currentLanguage = savedLang;
                 const tutorialLangSelect = document.getElementById('tutorial-language-select');
                 if (tutorialLangSelect) tutorialLangSelect.value = savedLang;
                 
-                // チュートリアル専用のカラーピッカーを初期化
                 initializeColorPicker('tutorial-');
 
                 updateTutorialStep();
@@ -1537,11 +1485,10 @@
         }
 
         function nextTutorialStep() {
-            // ステップ1から2へ進む際に、選択された言語を一時的に適用
             if (currentTutorialStep === 1) {
                  const selectedLang = document.getElementById('tutorial-language-select').value;
                  currentLanguage = selectedLang;
-                 applyTranslations(); // テキストの更新とUltimate機能の表示/非表示を適用
+                 applyTranslations();
             }
 
             if (currentTutorialStep < totalTutorialSteps) {
@@ -1558,18 +1505,14 @@
         }
         
         function finishTutorial() {
-            // アクセントカラーを最終的に設定
             const finalColor = document.getElementById('tutorial-accent-color-hidden-input').value;
             setAccentColor(finalColor);
 
-            // 最終言語を設定
             const finalLang = document.getElementById('tutorial-language-select').value;
-            setCurrentLanguage(finalLang); // localStorageとcurrentLanguageを更新し、全体に適用
+            setCurrentLanguage(finalLang);
 
-            // 初回訪問フラグを設定
             localStorage.setItem(FIRST_VISIT_KEY, 'false'); 
             
-            // モーダルを閉じて、メイン画面へ
             closeModal('tutorial-modal');
         }
 
@@ -1600,7 +1543,6 @@
         }
 
         function initializeEventListeners() { 
-            // グローバルなクリックイベントでメニューを閉じる
             window.addEventListener('click', (event) => { 
                 const menu = document.getElementById('item-menu');
                 if (menu.style.display === 'block' && 
@@ -1617,7 +1559,6 @@
                 } 
             }); 
 
-            // --- アドレスバー関連のリスナー ---
             const urlInput = document.getElementById('url-input');
             const goButton = document.getElementById('go-button');
             if (goButton) goButton.addEventListener('click', () => { 
@@ -1631,7 +1572,6 @@
                 if (e.key === 'Enter') { e.preventDefault(); goButton.click(); }
             });
             
-            // --- Ultimateモードのリスナー ---
             if (currentMode === 'ultimate') {
                 document.getElementById('add-button').addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('add-menu').classList.toggle('expanded'); }); 
                 document.getElementById('add-bookmark-option').addEventListener('click', () => { document.getElementById('add-menu').classList.remove('expanded'); showModal('bookmark-modal'); }); 
@@ -1663,10 +1603,8 @@
                 currentLanguage = e.target.value;
                 document.getElementById('tutorial-greeting').textContent = getLangString('hello');
             });
-            document.getElementById('next-to-usage').addEventListener('click', nextTutorialStep);
-            document.getElementById('next-to-color').addEventListener('click', nextTutorialStep);
-            document.getElementById('prev-to-language').addEventListener('click', prevTutorialStep);
-            document.getElementById('prev-to-usage').addEventListener('click', prevTutorialStep);
+            document.querySelectorAll('[data-step-next]').forEach(el => el.addEventListener('click', nextTutorialStep));
+            document.querySelectorAll('[data-step-prev]').forEach(el => el.addEventListener('click', prevTutorialStep));
             document.getElementById('reset-tutorial-color').addEventListener('click', (e) => { e.preventDefault(); resetColorPicker(DEFAULT_ACCENT_COLOR, 'tutorial-'); });
             document.getElementById('close-tutorial').addEventListener('click', finishTutorial);
         }
@@ -1674,19 +1612,16 @@
         function init() { 
             initializeMode();
 
-            // 初回訪問の確認
             if (localStorage.getItem(FIRST_VISIT_KEY)) {
-                // 初回訪問ではない場合: 通常の初期化
                 initializeSettings(); 
                 initializeColorPickers(); 
                 initializeEventListeners(); 
             } else {
-                // 初回訪問の場合: チュートリアル前の最小限の初期化
                 loadAccentColor(); 
-                initializeEventListeners(); // チュートリアルボタンのリスナーを先に設定
+                initializeEventListeners();
             }
             
-            showTutorialModal(); // 初回訪問時のみ表示される
+            showTutorialModal();
         }
         
         init();
