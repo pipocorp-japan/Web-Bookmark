@@ -368,6 +368,10 @@
             background-color: rgba(0, 0, 0, 0.6);
             animation: fadeIn 0.3s;
         }
+        /* チュートリアルモーダルのz-indexを上げておく */
+        #tutorial-modal {
+             z-index: 102;
+        }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         .modal-content {
@@ -405,19 +409,19 @@
         }
         
         /* フォルダ/アクセントカラーピッカーのラッパーに統一的なスタイルを適用 */
-        #custom-color-picker-wrapper, #edit-color-picker-wrapper, #accent-color-picker-wrapper {
+        #custom-color-picker-wrapper, #edit-color-picker-wrapper, #accent-color-picker-wrapper, #tutorial-color-picker-wrapper {
              padding: 15px;
              border: 1px solid var(--hover-bg);
              border-radius: 8px;
         }
         
-        #color-preview, #edit-color-preview, #accent-color-preview {
+        #color-preview, #edit-color-preview, #accent-color-preview, #tutorial-color-preview {
             height: 30px;
             border-radius: 4px;
             margin-top: 10px;
             border: 1px solid #ccc;
         }
-
+        
         .modal-buttons {
             display: flex;
             gap: 10px;
@@ -445,7 +449,7 @@
             background-color: var(--danger-color);
             color: white;
         }
-        #reset-folder-color, #reset-edit-folder-color, #reset-accent-color { /* #reset-accent-colorを追加 */
+        #reset-folder-color, #reset-edit-folder-color, #reset-accent-color, #reset-tutorial-color { 
             width: 100%; 
             margin-top: 10px;
         }
@@ -486,10 +490,26 @@
             cursor: not-allowed;
             pointer-events: none;
         }
+        
+        /* ★モード制御のためのCSSを更新/追加★ */
+        .tiny-mode #breadcrumbs,
+        .tiny-mode #header-right,
+        .tiny-mode #add-menu,
+        .tiny-mode .bookmark-item .edit-button { 
+            display: none !important; 
+        }
+
+        /* チュートリアルステップのスタイル */
+        .tutorial-step {
+            display: none;
+        }
+        .tutorial-step.active {
+            display: block;
+        }
 
     </style>
 </head>
-<body>
+<body data-mode="ultimate">
 
     <header>
         <div id="header-left">
@@ -514,14 +534,12 @@
         </div>
     </header>
 
-    <!-- ↓ここからアドレスバーを追加しました -->
     <div id="address-bar-container">
         <input type="text" id="url-input" placeholder="URLを入力または検索">
         <button id="go-button" class="icon-button">
             <span class="material-icons">arrow_forward</span>
         </button>
     </div>
-    <!-- ↑ここまでアドレスバーを追加しました -->
 
     <div id="add-menu">
         <div class="add-option" id="add-bookmark-option">
@@ -725,12 +743,80 @@
             </div>
         </div>
     </div>
+    
+    <!-- ★チュートリアルモーダルを更新★ -->
+    <div id="tutorial-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="tutorial-step-title" data-lang-key="welcome_title">ようこそ！</h2>
+            
+            <!-- STEP 1: 言語選択 -->
+            <div id="step-language" class="tutorial-step active">
+                <h3 id="tutorial-greeting"></h3>
+                <p data-lang-key="tutorial_language_prompt">使用する言語を選択してください:</p>
+                <select id="tutorial-language-select" style="width: 100%; margin-top: 10px;">
+                    <option value="ja">日本語</option>
+                    <option value="en">English</option>
+                    <option value="ko">한국어</option>
+                    <option value="zh">中文</option>
+                </select>
+                <div class="modal-buttons" style="margin-top: 20px;">
+                    <button class="modal-button primary" id="next-to-usage" data-lang-key="next">次へ</button>
+                </div>
+            </div>
+
+            <!-- STEP 2: 使い方説明 -->
+            <div id="step-usage" class="tutorial-step">
+                <p data-lang-key="tutorial_message_1">このサイトは、お気に入りのショートカットをまとめて管理できるカスタムスタートページです。</p>
+                <p data-lang-key="tutorial_message_2"><b>アドレスバー</b>にURLやキーワードを入力して、すぐにアクセス/検索ができます。</p>
+                <p id="tutorial-ultimate-feature" data-lang-key="tutorial_ultimate_feature" style="margin-top: 15px;">右上の<span class="material-icons" style="font-size: 1.2em; vertical-align: middle;">add</span>アイコンからブックマークやフォルダーを追加し、ホーム画面をカスタマイズしましょう！</p>
+                <div class="modal-buttons" style="margin-top: 20px;">
+                    <button class="modal-button secondary" id="prev-to-language" data-lang-key="back">戻る</button>
+                    <button class="modal-button primary" id="next-to-color" data-lang-key="next">次へ</button>
+                </div>
+            </div>
+
+            <!-- STEP 3: アクセントカラー設定 -->
+            <div id="step-color" class="tutorial-step">
+                <p data-lang-key="tutorial_color_prompt">最後に、サイトの**アクセントカラー**を設定しましょう！</p>
+                
+                <div id="tutorial-color-picker-wrapper">
+                    <input type="hidden" id="tutorial-accent-color-hidden-input" value="#4A90E2">
+                    <label data-lang-key="accent_color_setting">アクセントカラー</label>
+                    <div id="tutorial-color-preview"></div>
+                    <div id="tutorial-color-sliders">
+                         <div class="slider-container">
+                            <label for="tutorial-red-slider" data-lang-key="color_red">赤</label>
+                            <input type="range" id="tutorial-red-slider" min="0" max="255">
+                        </div>
+                        <div class="slider-container">
+                            <label for="tutorial-green-slider" data-lang-key="color_green">緑</label>
+                            <input type="range" id="tutorial-green-slider" min="0" max="255">
+                        </div>
+                        <div class="slider-container">
+                            <label for="tutorial-blue-slider" data-lang-key="color_blue">青</label>
+                            <input type="range" id="tutorial-blue-slider" min="0" max="255">
+                        </div>
+                    </div>
+                </div>
+                <button id="reset-tutorial-color" class="modal-button secondary" data-lang-key="reset_color">色をリセット</button>
+
+                <div class="modal-buttons" style="margin-top: 20px;">
+                    <button class="modal-button secondary" id="prev-to-usage" data-lang-key="back">戻る</button>
+                    <button class="modal-button primary" id="close-tutorial" data-lang-key="start_using">使い始める</button>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    <!-- ★チュートリアルモーダルここまで★ -->
+
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const DATA_STORAGE_KEY = 'myBookmarkSiteData';
         const LANGUAGE_STORAGE_KEY = 'myBookmarkSiteLanguage';
         const ACCENT_COLOR_STORAGE_KEY = 'myBookmarkSiteAccentColor'; 
+        const FIRST_VISIT_KEY = 'myBookmarkSiteFirstVisit'; 
         const DEFAULT_ACCENT_COLOR = '#4A90E2'; 
         let isDeleteMode = false;
         let isSortMode = false;
@@ -738,6 +824,9 @@
         let currentParentId = 'root';
         let currentLanguage = 'ja';
         let currentMenuAnchor = null; 
+        let currentMode = 'ultimate';
+        let currentTutorialStep = 1;
+        const totalTutorialSteps = 3;
 
         const INITIAL_DATA = [
             { id: 'b_google', type: 'bookmark', url: 'https://www.google.co.jp', title: 'Google', parentId: 'root' },
@@ -752,16 +841,20 @@
         
         const translations = { 
             ja: { 
-                home: 'ホーム', delete_selected_items_title: '選択した項目を削除', delete_mode_title: '削除モード', sort_mode_title: '並び替え', add_title: '追加', settings_title: '設定', bookmark: 'ブックマーク', folder: 'フォルダー', empty_message_1: '右上の', empty_message_2: 'アイコンでショートカットを追加しましょう！', add_bookmark_title: 'ブックマークの追加', url_placeholder: 'URLを入力 (例: https://www.google.com)', cancel: 'キャンセル', add: '追加', create_folder_title: 'フォルダーの作成', folder_name_placeholder: 'フォルダー名', folder_color: 'フォルダーの色', color_red: '赤', color_green: '緑', color_blue: '青', emoji_placeholder: '絵文字 (例: 💻)', create: '作成', confirm_title: '確認', ok: 'OK', close: '閉じる', language_setting: '言語', data_management: 'データ管理', reset_home_screen: 'ホーム画面をリセット', alert_url_required: 'URLを入力してください。', alert_invalid_url: '無効なURLです。正しい形式で入力してください。', alert_folder_name_required: 'フォルダー名を入力してください。', alert_no_items_selected: '削除する項目を選択してください。', confirm_delete: '{count}件の項目を削除します。フォルダを削除すると、その中のアイテムもすべて削除されます。よろしいですか？', confirm_reset: 'すべてのブックマークとフォルダが削除され、初期状態に戻ります。この操作は取り消せません。よろしいですか？', reset_color: '色をリセット', edit_item_title: '項目の編集', title_placeholder: 'タイトル (省略可)', save: '保存', edit: '編集', move: '移動', move_item_title: '移動先を選択', root_folder: 'ホーム', accent_color_setting: 'アクセントカラー' 
+                hello: 'こんにちは', back: '戻る', next: '次へ', start_using: '使い始める', 
+                home: 'ホーム', delete_selected_items_title: '選択した項目を削除', delete_mode_title: '削除モード', sort_mode_title: '並び替え', add_title: '追加', settings_title: '設定', bookmark: 'ブックマーク', folder: 'フォルダー', empty_message_1: '右上の', empty_message_2: 'アイコンでショートカットを追加しましょう！', add_bookmark_title: 'ブックマークの追加', url_placeholder: 'URLを入力 (例: https://www.google.com)', cancel: 'キャンセル', add: '追加', create_folder_title: 'フォルダーの作成', folder_name_placeholder: 'フォルダー名', folder_color: 'フォルダーの色', color_red: '赤', color_green: '緑', color_blue: '青', emoji_placeholder: '絵文字 (例: 💻)', create: '作成', confirm_title: '確認', ok: 'OK', close: '閉じる', language_setting: '言語', data_management: 'データ管理', reset_home_screen: 'ホーム画面をリセット', alert_url_required: 'URLを入力してください。', alert_invalid_url: '無効なURLです。正しい形式で入力してください。', alert_folder_name_required: 'フォルダー名を入力してください。', alert_no_items_selected: '削除する項目を選択してください。', confirm_delete: '{count}件の項目を削除します。フォルダを削除すると、その中のアイテムもすべて削除されます。よろしいですか？', confirm_reset: 'すべてのブックマークとフォルダが削除され、初期状態に戻ります。この操作は取り消せません。よろしいですか？', reset_color: '色をリセット', edit_item_title: '項目の編集', title_placeholder: 'タイトル (省略可)', save: '保存', edit: '編集', move: '移動', move_item_title: '移動先を選択', root_folder: 'ホーム', accent_color_setting: 'アクセントカラー', welcome_title: 'ようこそ！', tutorial_language_prompt: '使用する言語を選択してください:', tutorial_message_1: 'このサイトは、お気に入りのショートカットをまとめて管理できるカスタムスタートページです。', tutorial_message_2: '<b>アドレスバー</b>にURLやキーワードを入力して、すぐにアクセス/検索ができます。', tutorial_ultimate_feature: '右上の<span class="material-icons" style="font-size: 1.2em; vertical-align: middle;">add</span>アイコンからブックマークやフォルダーを追加し、ホーム画面をカスタマイズしましょう！', tutorial_color_prompt: '最後に、サイトの**アクセントカラー**を設定しましょう！'
             }, 
             en: { 
-                home: 'Home', delete_selected_items_title: 'Delete selected items', delete_mode_title: 'Delete mode', sort_mode_title: 'Sort mode', add_title: 'Add', settings_title: 'Settings', bookmark: 'Bookmark', folder: 'Folder', empty_message_1: 'Add shortcuts with the ', empty_message_2: ' icon in the top right!', add_bookmark_title: 'Add Bookmark', url_placeholder: 'Enter URL (e.g., https://www.google.com)', cancel: 'Cancel', add: 'Add', create_folder_title: 'Create Folder', folder_name_placeholder: 'Folder name', folder_color: 'Folder Color', color_red: 'Red', color_green: 'Green', color_blue: 'Blue', emoji_placeholder: 'Emoji (e.g., 💻)', create: 'Create', confirm_title: 'Confirm', ok: 'OK', close: 'Close', language_setting: 'Language', data_management: 'Data Management', reset_home_screen: 'Reset Home Screen', alert_url_required: 'Please enter a URL.', alert_invalid_url: 'Invalid URL. Please enter in the correct format.', alert_folder_name_required: 'Please enter a folder name.', alert_no_items_selected: 'Please select items to delete.', confirm_delete: 'Delete {count} item(s)? Deleting a folder will also delete all its contents. Are you sure?', confirm_reset: 'All bookmarks and folders will be deleted and reset to the initial state. This action cannot be undone. Are you sure?', reset_color: 'Reset Color', edit_item_title: 'Edit Item', title_placeholder: 'Title (Optional)', save: 'Save', edit: 'Edit', move: 'Move', move_item_title: 'Select Destination', root_folder: 'Home', accent_color_setting: 'Accent Color' 
+                hello: 'Hello', back: 'Back', next: 'Next', start_using: 'Start Using', 
+                home: 'Home', delete_selected_items_title: 'Delete selected items', delete_mode_title: 'Delete mode', sort_mode_title: 'Sort mode', add_title: 'Add', settings_title: 'Settings', bookmark: 'Bookmark', folder: 'Folder', empty_message_1: 'Add shortcuts with the ', empty_message_2: ' icon in the top right!', add_bookmark_title: 'Add Bookmark', url_placeholder: 'Enter URL (e.g., https://www.google.com)', cancel: 'Cancel', add: 'Add', create_folder_title: 'Create Folder', folder_name_placeholder: 'Folder name', folder_color: 'Folder Color', color_red: 'Red', color_green: 'Green', color_blue: 'Blue', emoji_placeholder: 'Emoji (e.g., 💻)', create: 'Create', confirm_title: 'Confirm', ok: 'OK', close: 'Close', language_setting: 'Language', data_management: 'Data Management', reset_home_screen: 'Reset Home Screen', alert_url_required: 'Please enter a URL.', alert_invalid_url: 'Invalid URL. Please enter in the correct format.', alert_folder_name_required: 'Please enter a folder name.', alert_no_items_selected: 'Please select items to delete.', confirm_delete: 'Delete {count} item(s)? Deleting a folder will also delete all its contents. Are you sure?', confirm_reset: 'All bookmarks and folders will be deleted and reset to the initial state. This action cannot be undone. Are you sure?', reset_color: 'Reset Color', edit_item_title: 'Edit Item', title_placeholder: 'Title (Optional)', save: 'Save', edit: 'Edit', move: 'Move', move_item_title: 'Select Destination', root_folder: 'Home', accent_color_setting: 'Accent Color', welcome_title: 'Welcome!', tutorial_language_prompt: 'Please select your language:', tutorial_message_1: 'This site is a custom start page for managing your favorite shortcuts.', tutorial_message_2: 'Enter a URL or keyword in the <b>Address Bar</b> for immediate access/search.', tutorial_ultimate_feature: 'Add bookmarks and folders from the <span class="material-icons" style="font-size: 1.2em; vertical-align: middle;">add</span> icon in the top right to customize your home screen!', tutorial_color_prompt: 'Finally, let\'s set the **Accent Color** for the site!'
             }, 
             ko: { 
-                home: '홈', delete_selected_items_title: '선택한 항목 삭제', delete_mode_title: '삭제 모드', sort_mode_title: '정렬 모드', add_title: '추가', settings_title: '설정', bookmark: '북마크', folder: '폴더', empty_message_1: '오른쪽 상단의 ', empty_message_2: ' 아이콘으로 바로가기를 추가하세요!', add_bookmark_title: '북마크 추가', url_placeholder: 'URL 입력 (예: https://www.google.com)', cancel: '취소', add: '추가', create_folder_title: '폴더 만들기', folder_name_placeholder: '폴더 이름', folder_color: '폴더 색상', color_red: '빨강', color_green: '초록', color_blue: '파랑', emoji_placeholder: '이모지 (예: 💻)', create: '만들기', confirm_title: '확인', ok: '확인', close: '닫기', language_setting: '언어', data_management: '데이터 관리', reset_home_screen: '홈 화면 초기화', alert_url_required: 'URL을 입력해주세요.', alert_invalid_url: '유효하지 않은 URL입니다. 올바른 형식으로 입력해주세요.', alert_folder_name_required: '폴더 이름을 입력해주세요.', alert_no_items_selected: '삭제할 항목을 선택해주세요.', confirm_delete: '{count}개의 항목을 삭제하시겠습니까? 폴더를 삭제하면 내부의 모든 항목도 삭제됩니다. 계속하시겠습니까?', confirm_reset: '모든 북마크와 폴더가 삭제되고 초기 상태로 돌아갑니다. 이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?', reset_color: '색상 초기화', edit_item_title: '항목 편집', title_placeholder: '제목 (선택 사항)', save: '저장', edit: '편집', move: '이동', move_item_title: '이동 대상 선택', root_folder: '홈', accent_color_setting: '강조 색상' 
+                hello: '안녕하세요', back: '뒤로', next: '다음', start_using: '사용 시작', 
+                home: '홈', delete_selected_items_title: '선택한 항목 삭제', delete_mode_title: '삭제 모드', sort_mode_title: '정렬 모드', add_title: '추가', settings_title: '설정', bookmark: '북마크', folder: '폴더', empty_message_1: '오른쪽 상단의 ', empty_message_2: ' 아이콘으로 바로가기를 추가하세요!', add_bookmark_title: '북마크 추가', url_placeholder: 'URL 입력 (예: https://www.google.com)', cancel: '취소', add: '추가', create_folder_title: '폴더 만들기', folder_name_placeholder: '폴더 이름', folder_color: '폴더 색상', color_red: '빨강', color_green: '초록', color_blue: '파랑', emoji_placeholder: '이모지 (예: 💻)', create: '만들기', confirm_title: '확인', ok: '확인', close: '닫기', language_setting: '언어', data_management: '데이터 관리', reset_home_screen: '홈 화면 초기화', alert_url_required: 'URL을 입력해주세요.', alert_invalid_url: '유효하지 않은 URL입니다. 올바른 형식으로 입력해주세요.', alert_folder_name_required: '폴더 이름을 입력해주세요.', alert_no_items_selected: '삭제할 항목을 선택해주세요.', confirm_delete: '{count}개의 항목을 삭제하시겠습니까? 폴더를 삭제하면 내부의 모든 항목도 삭제됩니다. 계속하시겠습니까?', confirm_reset: '모든 북마크와 폴더가 삭제되고 초기 상태로 돌아갑니다. 이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?', reset_color: '색상 초기화', edit_item_title: '항목 편집', title_placeholder: '제목 (선택 사항)', save: '저장', edit: '편집', move: '이동', move_item_title: '이동 대상 선택', root_folder: '홈', accent_color_setting: '강조 색상', welcome_title: '환영합니다!', tutorial_language_prompt: '사용할 언어를 선택하십시오:', tutorial_message_1: '이 사이트는 즐겨찾는 바로가기를 한 곳에서 관리할 수 있는 맞춤 시작 페이지입니다.', tutorial_message_2: '<b>주소 표시줄</b>에 URL이나 키워드를 입력하여 즉시 접속/검색할 수 있습니다.', tutorial_ultimate_feature: '오른쪽 상단의 <span class="material-icons" style="font-size: 1.2em; vertical-align: middle;">add</span> 아이콘을 통해 북마크 및 폴더를 추가하여 홈 화면을 사용자 정의하십시오!', tutorial_color_prompt: '마지막으로, 사이트의 **강조 색상**을 설정해 봅시다!'
             }, 
             zh: { 
-                home: '主页', delete_selected_items_title: '删除所选项目', delete_mode_title: '删除模式', sort_mode_title: '排序模式', add_title: '添加', settings_title: '设置', bookmark: '书签', folder: '文件夹', empty_message_1: '点击右上角的 ', empty_message_2: ' 图标添加快捷方式！', add_bookmark_title: '添加书签', url_placeholder: '输入网址 (例如 https://www.google.com)', cancel: '取消', add: '添加', create_folder_title: '创建文件夹', folder_name_placeholder: '文件夹名称', folder_color: '文件夹颜色', color_red: '红', color_green: '绿', color_blue: '蓝', emoji_placeholder: '表情符号 (例如 💻)', create: '创建', confirm_title: '确认', ok: '确定', close: '关闭', language_setting: '语言', data_management: '数据管理', reset_home_screen: '重置主屏幕', alert_url_required: '请输入网址。', alert_invalid_url: '无效的网址。请输入正确的格式。', alert_folder_name_required: '请输入文件夹名称。', alert_no_items_selected: '请选择要删除的项目。', confirm_delete: '要删除 {count} 个项目吗？删除文件夹将同时删除其所有内容。您确定吗？', confirm_reset: '所有书签和文件夹将被删除并重置为初始状态。此操作无法撤销。您确定吗？', reset_color: '重置颜色', edit_item_title: '编辑项目', title_placeholder: '标题 (可选)', save: '保存', edit: '编辑', move: '移动', move_item_title: '选择移动目标', root_folder: '主页', accent_color_setting: '强调颜色' 
+                hello: '你好', back: '返回', next: '下一步', start_using: '开始使用', 
+                home: '主页', delete_selected_items_title: '删除所选项目', delete_mode_title: '删除模式', sort_mode_title: '排序模式', add_title: '添加', settings_title: '设置', bookmark: '书签', folder: '文件夹', empty_message_1: '点击右上角的 ', empty_message_2: ' 图标添加快捷方式！', add_bookmark_title: '添加书签', url_placeholder: '输入网址 (例如 https://www.google.com)', cancel: '取消', add: '添加', create_folder_title: '创建文件夹', folder_name_placeholder: '文件夹名称', folder_color: '文件夹颜色', color_red: '红', color_green: '绿', color_blue: '蓝', emoji_placeholder: '表情符号 (例如 💻)', create: '创建', confirm_title: '确认', ok: '确定', close: '关闭', language_setting: '语言', data_management: '数据管理', reset_home_screen: '重置主屏幕', alert_url_required: '请输入网址。', alert_invalid_url: '无效的网址。请输入正确的格式。', alert_folder_name_required: '请输入文件夹名称。', alert_no_items_selected: '请选择要删除的项目。', confirm_delete: '要删除 {count} 个项目吗？删除文件夹将同时删除其所有内容。您确定吗？', confirm_reset: '所有书签和文件夹将被删除并重置为初始状态。此操作无法撤销。您确定吗？', reset_color: '重置颜色', edit_item_title: '编辑项目', title_placeholder: '标题 (可选)', save: '保存', edit: '编辑', move: '移动', move_item_title: '选择移动目标', root_folder: '主页', accent_color_setting: '强调颜色', welcome_title: '欢迎！', tutorial_language_prompt: '请选择您使用的语言:', tutorial_message_1: '本网站是一个自定义起始页，用于管理您最喜欢的快捷方式。', tutorial_message_2: '在<b>地址栏</b>中输入网址或关键词，即可立即访问/搜索。', tutorial_ultimate_feature: '您可以通过右上角的<span class="material-icons" style="font-size: 1.2em; vertical-align: middle;">add</span>图标添加书签和文件夹，自定义您的主屏幕！', tutorial_color_prompt: '最后，让我们设置网站的**强调颜色**！'
             } 
         };
 
@@ -775,7 +868,6 @@
         }
 
         function rgbToHex(r, g, b) {
-            // 値が範囲外にならないように丸めてから処理
             const h = (1 << 24) + ((Math.round(r) & 0xFF) << 16) + ((Math.round(g) & 0xFF) << 8) + (Math.round(b) & 0xFF);
             return "#" + h.toString(16).slice(1).toUpperCase();
         }
@@ -789,14 +881,134 @@
             return rgbToHex(newR, newG, newB);
         }
         
-        function getLangString(key, replacements = {}) { let str = translations[currentLanguage]?.[key] || translations.en[key] || key; for (const placeholder in replacements) { str = str.replace(`{${placeholder}}`, replacements[placeholder]); } return str; }
-        function applyTranslations() { document.documentElement.lang = currentLanguage; document.querySelectorAll('[data-lang-key]').forEach(el => { el.textContent = getLangString(el.dataset.langKey); }); document.querySelectorAll('[data-lang-placeholder]').forEach(el => { el.placeholder = getLangString(el.dataset.langPlaceholder); }); document.querySelectorAll('[data-lang-title]').forEach(el => { el.title = getLangString(el.dataset.langTitle); }); renderAll(); }
-        function setCurrentLanguage(lang) { currentLanguage = lang; localStorage.setItem(LANGUAGE_STORAGE_KEY, lang); document.getElementById('language-select').value = lang; applyTranslations(); }
-        function getBookmarksData() { const data = localStorage.getItem(DATA_STORAGE_KEY); if (data) { return JSON.parse(data); } else { const initialData = INITIAL_DATA.map(item => ({ ...item, favicon: item.type === 'bookmark' ? getFaviconUrl(item.url) : null })); saveBookmarksData(initialData); return initialData; } }
-        function saveBookmarksData(data) { localStorage.setItem(DATA_STORAGE_KEY, JSON.stringify(data)); }
-        function getFaviconUrl(url) { try { const domain = new URL(url).hostname; return `https://s2.googleusercontent.com/s2/favicons?domain=${domain}&sz=64`; } catch (e) { console.error("Invalid URL for favicon:", url); return 'https://via.placeholder.com/64'; } }
-        function renderAll() { renderBreadcrumbs(); renderBookmarks(); }
-        function renderBreadcrumbs() { const breadcrumbsContainer = document.getElementById('breadcrumbs'); breadcrumbsContainer.innerHTML = ''; const allData = getBookmarksData(); const path = []; let currentId = currentParentId; while (currentId !== 'root') { const folder = allData.find(item => item.id === currentId); if (folder) { path.unshift(folder); currentId = folder.parentId; } else { break; } } const rootLink = document.createElement('a'); rootLink.textContent = getLangString('home'); rootLink.onclick = () => setCurrentParentId('root'); breadcrumbsContainer.appendChild(rootLink); path.forEach(folder => { const separator = document.createElement('span'); separator.textContent = '>'; breadcrumbsContainer.appendChild(separator); const folderLink = document.createElement('a'); folderLink.textContent = folder.name; folderLink.onclick = () => setCurrentParentId(folder.id); breadcrumbsContainer.appendChild(folderLink); }); }
+        // --- データ/言語/表示関連のユーティリティ関数 ---
+        
+        function getLangString(key, replacements = {}) { 
+            let str = translations[currentLanguage]?.[key] || translations.en[key] || key; 
+            for (const placeholder in replacements) { 
+                str = str.replace(`{${placeholder}}`, replacements[placeholder]); 
+            } 
+            return str; 
+        }
+
+        function applyTranslations() { 
+            document.documentElement.lang = currentLanguage; 
+            document.querySelectorAll('[data-lang-key]').forEach(el => { el.innerHTML = getLangString(el.dataset.langKey); }); 
+            document.querySelectorAll('[data-lang-placeholder]').forEach(el => { el.placeholder = getLangString(el.dataset.langPlaceholder); }); 
+            document.querySelectorAll('[data-lang-title]').forEach(el => { el.title = getLangString(el.dataset.langTitle); }); 
+            
+            // チュートリアル挨拶文の更新 (チュートリアルモーダルが表示されていない場合でも安全)
+            const greetingEl = document.getElementById('tutorial-greeting');
+            if (greetingEl) greetingEl.textContent = getLangString('hello');
+            
+            // TinyモードでのUltimate機能の説明非表示
+            const ultimateFeatureEl = document.getElementById('tutorial-ultimate-feature');
+            if (ultimateFeatureEl) {
+                ultimateFeatureEl.style.display = currentMode === 'tiny' ? 'none' : 'block';
+            }
+
+            renderAll(); 
+        }
+
+        function setCurrentLanguage(lang) { 
+            currentLanguage = lang; 
+            localStorage.setItem(LANGUAGE_STORAGE_KEY, lang); 
+            const selectEl = document.getElementById('language-select');
+            if (selectEl) selectEl.value = lang; 
+            applyTranslations(); 
+        }
+
+        function getBookmarksData() { 
+            const data = localStorage.getItem(DATA_STORAGE_KEY); 
+            if (data) { 
+                return JSON.parse(data); 
+            } else { 
+                const initialData = INITIAL_DATA.map(item => ({ 
+                    ...item, 
+                    favicon: item.type === 'bookmark' ? getFaviconUrl(item.url) : null 
+                })); 
+                saveBookmarksData(initialData); 
+                return initialData; 
+            } 
+        }
+        
+        function saveBookmarksData(data) { 
+            localStorage.setItem(DATA_STORAGE_KEY, JSON.stringify(data)); 
+        }
+        
+        function getFaviconUrl(url) { 
+            try { 
+                const domain = new URL(url).hostname; 
+                return `https://s2.googleusercontent.com/s2/favicons?domain=${domain}&sz=64`; 
+            } catch (e) { 
+                console.error("Invalid URL for favicon:", url); 
+                return 'https://via.placeholder.com/64'; 
+            } 
+        }
+        
+        function renderAll() { 
+            renderBreadcrumbs(); 
+            renderBookmarks(); 
+        }
+        
+        function showModal(id) { document.getElementById(id).style.display = 'block'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function hideItemMenu() { document.getElementById('item-menu').style.display = 'none'; }
+
+        function showConfirm(message, onConfirm) { 
+            const modal = document.getElementById('confirm-modal'); 
+            modal.querySelector('#confirm-message').textContent = message; 
+            const okButton = modal.querySelector('#confirm-ok'); 
+            const newOkButton = okButton.cloneNode(true); 
+            okButton.parentNode.replaceChild(newOkButton, okButton); 
+            newOkButton.textContent = getLangString('ok'); 
+            newOkButton.onclick = () => { closeModal('confirm-modal'); onConfirm(); }; 
+            const cancelButton = modal.querySelector('#confirm-cancel'); 
+            cancelButton.onclick = () => closeModal('confirm-modal'); 
+            cancelButton.style.display = 'inline-block'; 
+            showModal('confirm-modal'); 
+        }
+
+        function showCustomAlert(message) { 
+            showConfirm(message, () => {}); 
+            document.getElementById('confirm-cancel').style.display = 'none'; 
+            document.getElementById('confirm-ok').textContent = getLangString('close'); 
+        }
+
+        // --- ブックマーク/フォルダ描画関連の関数 ---
+        
+        function renderBreadcrumbs() { 
+            const breadcrumbsContainer = document.getElementById('breadcrumbs'); 
+            breadcrumbsContainer.innerHTML = ''; 
+            
+            if (currentMode === 'tiny') {
+                 return;
+            }
+            
+            const allData = getBookmarksData(); 
+            const path = []; 
+            let currentId = currentParentId; 
+            
+            while (currentId !== 'root') { 
+                const folder = allData.find(item => item.id === currentId); 
+                if (folder) { path.unshift(folder); currentId = folder.parentId; } else { break; } 
+            } 
+            
+            const rootLink = document.createElement('a'); 
+            rootLink.textContent = getLangString('home'); 
+            rootLink.onclick = () => setCurrentParentId('root'); 
+            breadcrumbsContainer.appendChild(rootLink); 
+            
+            path.forEach(folder => { 
+                const separator = document.createElement('span'); 
+                separator.textContent = '>'; 
+                breadcrumbsContainer.appendChild(separator); 
+                const folderLink = document.createElement('a'); 
+                folderLink.textContent = folder.name; 
+                folderLink.onclick = () => setCurrentParentId(folder.id); 
+                breadcrumbsContainer.appendChild(folderLink); 
+            }); 
+        }
         
         function renderBookmarks() { 
             const container = document.getElementById('bookmarks-container'); 
@@ -805,6 +1017,7 @@
             container.appendChild(emptyMessage); 
             const allData = getBookmarksData(); 
             const itemsToDisplay = allData.filter(item => item.parentId === currentParentId); 
+            const isTinyMode = currentMode === 'tiny';
             
             itemsToDisplay.sort((a, b) => {
                 if (a.type === 'folder' && b.type !== 'folder') return -1;
@@ -819,7 +1032,6 @@
                 itemElement.dataset.id = item.id; 
                 itemElement.dataset.type = item.type; 
                 
-                // --- 編集/移動ボタンの追加 ---
                 const editButton = document.createElement('button');
                 editButton.className = 'edit-button';
                 editButton.innerHTML = '<span class="material-icons" style="font-size: 18px;">more_vert</span>';
@@ -828,13 +1040,13 @@
                 editButton.addEventListener('click', (e) => {
                     e.stopPropagation(); 
                     if (!isDeleteMode && !isSortMode) {
-                        showItemMenu(item.id, e.target);
+                        if (!isTinyMode) { 
+                            showItemMenu(item.id, e.target);
+                        }
                     }
                 });
                 itemElement.appendChild(editButton);
-                // -------------------------
 
-                // ブックマークまたはフォルダクリック時の処理 
                 itemElement.addEventListener('click', (e) => { 
                     if (isSortMode) { 
                         e.preventDefault(); 
@@ -846,13 +1058,11 @@
                         checkbox.checked = !checkbox.checked; 
                         itemElement.classList.toggle('selected', checkbox.checked); 
                     } else if (item.type === 'folder') { 
-                        // フォルダに移動
                         if (!e.target.classList.contains('edit-button') && !e.target.closest('.edit-button')) {
                             e.preventDefault(); 
                             setCurrentParentId(item.id); 
                         }
                     } else if (item.type === 'bookmark') { 
-                        // リンクを開く
                         if (!e.target.classList.contains('edit-button') && !e.target.closest('.edit-button')) {
                             window.open(item.url, '_blank'); 
                         }
@@ -886,44 +1096,23 @@
             updateSortModeDisplay(); 
         }
 
-        // ★アクセントカラー設定関数を更新★
-        function setAccentColor(color) {
-            const hoverColor = darkenHexColor(color, 15); 
-            document.documentElement.style.setProperty('--primary-color', color);
-            document.documentElement.style.setProperty('--primary-hover-color', hoverColor);
-            localStorage.setItem(ACCENT_COLOR_STORAGE_KEY, color);
-            
-            // フォルダカラーピッカーの設定も更新 (init()時に実行されるため、ここでは不要だが安全のため)
-            document.getElementById('accent-color-hidden-input').value = color;
-        }
-
-        // ★アクセントカラーロード関数を更新★
-        function loadAccentColor() {
-            const savedColor = localStorage.getItem(ACCENT_COLOR_STORAGE_KEY) || DEFAULT_ACCENT_COLOR;
-            setAccentColor(savedColor);
-            return savedColor;
-        }
-        
         function showItemMenu(itemId, anchorElement) {
             const menu = document.getElementById('item-menu');
-            const rect = anchorElement.getBoundingClientRect();
+            if (currentMode === 'tiny') return;
 
-            // メニューの位置を設定
+            const rect = anchorElement.getBoundingClientRect();
             menu.style.top = `${rect.bottom + 5}px`;
             menu.style.left = `${rect.right - menu.offsetWidth}px`;
             
-            // 画面右端からはみ出る場合の調整
             if (rect.right > window.innerWidth - menu.offsetWidth) {
                  menu.style.left = `${window.innerWidth - menu.offsetWidth - 10}px`;
             }
 
-            // メニューにアイテムIDを設定
             menu.dataset.itemId = itemId;
             
             const allData = getBookmarksData();
             const item = allData.find(i => i.id === itemId);
             
-            // フォルダは移動できないため「移動」オプションの表示を制御
             const moveOption = document.getElementById('menu-move');
             moveOption.style.display = (item && item.type === 'bookmark') ? 'flex' : 'none';
 
@@ -932,6 +1121,8 @@
         }
 
         function showMoveModal(itemId) {
+            if (currentMode === 'tiny') return;
+
             const allData = getBookmarksData();
             const item = allData.find(i => i.id === itemId);
             if (!item || item.type !== 'bookmark') return;
@@ -940,7 +1131,6 @@
             const folderList = document.getElementById('folder-list');
             folderList.innerHTML = '';
 
-            // 1. ホーム（ルート）の選択肢
             const rootItem = document.createElement('div');
             rootItem.className = 'folder-item';
             rootItem.dataset.folderId = 'root';
@@ -948,10 +1138,8 @@
             rootItem.onclick = () => moveItemToFolder(itemId, 'root');
             folderList.appendChild(rootItem);
 
-            // 2. その他のフォルダの選択肢
             const allFolders = allData.filter(i => i.type === 'folder');
             allFolders.forEach(folder => {
-                // 現在の親フォルダへの移動は無効
                 const isDisabled = folder.id === currentParentId;
                 
                 const folderItem = document.createElement('div');
@@ -970,9 +1158,34 @@
             showModal('move-modal');
         }
 
+        function moveItemToFolder(itemId, newParentId) {
+            const allData = getBookmarksData();
+            const itemIndex = allData.findIndex(item => item.id === itemId);
 
-        function setCurrentParentId(newId) { currentParentId = newId; if (isDeleteMode) toggleDeleteMode(); if (isSortMode) toggleSortMode(); renderAll(); }
+            if (itemIndex > -1 && allData[itemIndex].type === 'bookmark') {
+                allData[itemIndex].parentId = newParentId;
+                saveBookmarksData(allData);
+                closeModal('move-modal');
+                hideItemMenu();
+                renderAll();
+            }
+        }
+        
+        function setCurrentParentId(newId) { 
+            currentParentId = newId; 
+            if (isDeleteMode) toggleDeleteMode(); 
+            if (isSortMode) toggleSortMode(); 
+            renderAll(); 
+        }
+
+        // --- CRUD操作/モード制御の関数 ---
+
         function saveBookmark() { 
+            if (currentMode === 'tiny') {
+                 showCustomAlert(getLangString('edit_item_title'));
+                 return;
+            }
+
             const urlInput = document.getElementById('bookmark-url-input'); 
             let url = urlInput.value.trim(); 
             if (!url) { showCustomAlert(getLangString('alert_url_required')); return; } 
@@ -990,7 +1203,9 @@
                 showCustomAlert(getLangString('alert_invalid_url')); 
             } 
         }
+
         function saveFolder() { 
+             if (currentMode === 'tiny') return;
             const nameInput = document.getElementById('folder-name-input'); 
             const name = nameInput.value.trim(); 
             if (!name) { showCustomAlert(getLangString('alert_folder_name_required')); return; } 
@@ -1003,152 +1218,16 @@
             document.getElementById('folder-emoji-input').value = ''; 
             renderAll(); 
         }
-        function toggleDeleteMode() { 
-            if (isSortMode) toggleSortMode(); 
-            isDeleteMode = !isDeleteMode; 
-            updateDeleteModeDisplay(); 
-            if (!isDeleteMode) { 
-                document.querySelectorAll('.bookmark-item.selected').forEach(item => { 
-                    item.classList.remove('selected'); 
-                    item.querySelector('.select-checkbox').checked = false; 
-                }); 
-            } 
-        }
-        function updateDeleteModeDisplay() { 
-            const container = document.body; 
-            const deleteIcon = document.getElementById('delete-toggle').querySelector('.material-icons'); 
-            if (isDeleteMode) { 
-                container.classList.add('delete-mode'); 
-                deleteIcon.textContent = 'cancel'; 
-            } else { 
-                container.classList.remove('delete-mode'); 
-                deleteIcon.textContent = 'delete'; 
-            } 
-        }
         
-        // ドラッグ＆ドロップによるフォルダ移動のロジックは削除し、純粋な並び替えのみに
-        function toggleSortMode() {
-            if (isDeleteMode) toggleDeleteMode();
-            isSortMode = !isSortMode;
-            updateSortModeDisplay();
-            const container = document.getElementById('bookmarks-container');
-
-            if (isSortMode) {
-                sortableInstance = new Sortable(container, {
-                    animation: 150,
-                    draggable: '.bookmark-item',
-                    filter: '.edit-button, #empty-message',
-                    preventOnFilter: true,
-                    forceFallback: true,
-                    touchStartThreshold: 3,
-                    group: 'shared', 
-                    onEnd: saveOrder, // 並び替え終了時に順序を保存
-                });
-            } else {
-                if (sortableInstance) {
-                    saveOrder();
-                    sortableInstance.destroy();
-                    sortableInstance = null;
-                }
-            }
-        }
-
-        // 移動ボタンで呼び出される関数
-        function moveItemToFolder(itemId, newParentId) {
-            const allData = getBookmarksData();
-            const itemIndex = allData.findIndex(item => item.id === itemId);
-
-            if (itemIndex > -1 && allData[itemIndex].type === 'bookmark') {
-                allData[itemIndex].parentId = newParentId;
-                saveBookmarksData(allData);
-                closeModal('move-modal');
-                hideItemMenu();
-                renderAll();
-            }
-        }
-
-        function updateSortModeDisplay() { 
-            const container = document.body; 
-            const sortIcon = document.getElementById('sort-toggle').querySelector('.material-icons'); 
-            if (isSortMode) { 
-                container.classList.add('sort-mode'); 
-                sortIcon.textContent = 'check'; 
-            } else { 
-                container.classList.remove('sort-mode'); 
-                sortIcon.textContent = 'sort'; 
-            } 
-        }
-        
-        function saveOrder() { 
-            const container = document.getElementById('bookmarks-container'); 
-            const newOrderedIds = Array.from(container.querySelectorAll('.bookmark-item')).map(item => item.dataset.id); 
-            if (newOrderedIds.length === 0) return; 
-            
-            const allData = getBookmarksData(); 
-            const currentFolderItems = allData.filter(item => item.parentId === currentParentId); 
-            const otherItems = allData.filter(item => item.parentId !== currentParentId); 
-            
-            const sortedCurrentFolderItems = newOrderedIds
-                .map(id => currentFolderItems.find(item => item.id === id))
-                .filter(Boolean); 
-            
-            const sortedFolders = sortedCurrentFolderItems.filter(item => item.type === 'folder');
-            const sortedBookmarks = sortedCurrentFolderItems.filter(item => item.type === 'bookmark');
-
-            const newData = [...otherItems, ...sortedFolders, ...sortedBookmarks];
-            
-            saveBookmarksData(newData); 
-        }
-        
-        function deleteSelectedItems() { 
-            const selectedIds = Array.from(document.querySelectorAll('.select-checkbox:checked')).map(cb => cb.dataset.id); 
-            if (selectedIds.length === 0) { 
-                showCustomAlert(getLangString('alert_no_items_selected')); 
-                return; 
-            } 
-            showConfirm(getLangString('confirm_delete', { count: selectedIds.length }), () => { 
-                let data = getBookmarksData(); 
-                const allData = [...data]; 
-                const getDescendantIds = (folderId) => { 
-                    let childrenIds = []; 
-                    const children = allData.filter(item => item.parentId === folderId); 
-                    for (const child of children) { 
-                        childrenIds.push(child.id); 
-                        if (child.type === 'folder') { 
-                            childrenIds = childrenIds.concat(getDescendantIds(child.id)); 
-                        } 
-                    } 
-                    return childrenIds; 
-                }; 
-                const idsToDelete = new Set(selectedIds); 
-                selectedIds.forEach(id => { 
-                    if (id.startsWith('f_')) { 
-                        getDescendantIds(id).forEach(childId => idsToDelete.add(childId)); 
-                    } 
-                }); 
-                const newData = data.filter(item => !idsToDelete.has(item.id)); 
-                saveBookmarksData(newData); 
-                toggleDeleteMode(); 
-                renderAll(); 
-            }); 
-        }
-        
-        function resetData() { showConfirm(getLangString('confirm_reset'), () => { localStorage.removeItem(DATA_STORAGE_KEY); localStorage.removeItem(ACCENT_COLOR_STORAGE_KEY); location.reload(); }); } // ★リセット時にアクセントカラーも削除★
-        function showModal(id) { document.getElementById(id).style.display = 'block'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function hideItemMenu() { document.getElementById('item-menu').style.display = 'none'; }
-        function showConfirm(message, onConfirm) { const modal = document.getElementById('confirm-modal'); modal.querySelector('#confirm-message').textContent = message; const okButton = modal.querySelector('#confirm-ok'); const newOkButton = okButton.cloneNode(true); okButton.parentNode.replaceChild(newOkButton, okButton); newOkButton.textContent = getLangString('ok'); newOkButton.onclick = () => { closeModal('confirm-modal'); onConfirm(); }; const cancelButton = modal.querySelector('#confirm-cancel'); cancelButton.onclick = () => closeModal('confirm-modal'); cancelButton.style.display = 'inline-block'; showModal('confirm-modal'); }
-        function showCustomAlert(message) { showConfirm(message, () => {}); document.getElementById('confirm-cancel').style.display = 'none'; document.getElementById('confirm-ok').textContent = getLangString('close'); }
-        
-        // --- 編集モーダル関連の関数 ---
-
         function showEditModal(itemId) {
+            if (currentMode === 'tiny') return;
+
             const allData = getBookmarksData();
             const item = allData.find(i => i.id === itemId);
             if (!item) return;
 
             const modal = document.getElementById('edit-modal');
-            modal.className = 'modal'; // クラスをリセット
+            modal.className = 'modal';
 
             document.getElementById('edit-id-input').value = item.id;
             document.getElementById('edit-type-input').value = item.type;
@@ -1169,6 +1248,8 @@
         }
 
         function saveEdit() {
+            if (currentMode === 'tiny') return;
+
             const itemId = document.getElementById('edit-id-input').value;
             const itemType = document.getElementById('edit-type-input').value;
             let allData = getBookmarksData();
@@ -1214,14 +1295,162 @@
             renderAll();
         }
 
-        // --- カラーピッカー関連の関数 (アクセントカラーに対応するため修正) ---
+        function toggleDeleteMode() { 
+            if (currentMode === 'tiny') return;
+            if (isSortMode) toggleSortMode(); 
+            isDeleteMode = !isDeleteMode; 
+            updateDeleteModeDisplay(); 
+            if (!isDeleteMode) { 
+                document.querySelectorAll('.bookmark-item.selected').forEach(item => { 
+                    item.classList.remove('selected'); 
+                    item.querySelector('.select-checkbox').checked = false; 
+                }); 
+            } 
+        }
+
+        function updateDeleteModeDisplay() { 
+            const container = document.body; 
+            const deleteIcon = document.getElementById('delete-toggle').querySelector('.material-icons'); 
+            if (isDeleteMode) { 
+                container.classList.add('delete-mode'); 
+                deleteIcon.textContent = 'cancel'; 
+            } else { 
+                container.classList.remove('delete-mode'); 
+                deleteIcon.textContent = 'delete'; 
+            } 
+        }
+        
+        function toggleSortMode() {
+            if (currentMode === 'tiny') return;
+            if (isDeleteMode) toggleDeleteMode();
+            isSortMode = !isSortMode;
+            updateSortModeDisplay();
+            const container = document.getElementById('bookmarks-container');
+
+            if (isSortMode) {
+                sortableInstance = new Sortable(container, {
+                    animation: 150,
+                    draggable: '.bookmark-item',
+                    filter: '.edit-button, #empty-message',
+                    preventOnFilter: true,
+                    forceFallback: true,
+                    touchStartThreshold: 3,
+                    group: 'shared', 
+                    onEnd: saveOrder, 
+                });
+            } else {
+                if (sortableInstance) {
+                    saveOrder();
+                    sortableInstance.destroy();
+                    sortableInstance = null;
+                }
+            }
+        }
+
+        function updateSortModeDisplay() { 
+            const container = document.body; 
+            const sortIcon = document.getElementById('sort-toggle').querySelector('.material-icons'); 
+            if (isSortMode) { 
+                container.classList.add('sort-mode'); 
+                sortIcon.textContent = 'check'; 
+            } else { 
+                container.classList.remove('sort-mode'); 
+                sortIcon.textContent = 'sort'; 
+            } 
+        }
+        
+        function saveOrder() { 
+            if (currentMode === 'tiny') return;
+            const container = document.getElementById('bookmarks-container'); 
+            const newOrderedIds = Array.from(container.querySelectorAll('.bookmark-item')).map(item => item.dataset.id); 
+            if (newOrderedIds.length === 0) return; 
+            
+            const allData = getBookmarksData(); 
+            const currentFolderItems = allData.filter(item => item.parentId === currentParentId); 
+            const otherItems = allData.filter(item => item.parentId !== currentParentId); 
+            
+            const sortedCurrentFolderItems = newOrderedIds
+                .map(id => currentFolderItems.find(item => item.id === id))
+                .filter(Boolean); 
+            
+            const sortedFolders = sortedCurrentFolderItems.filter(item => item.type === 'folder');
+            const sortedBookmarks = sortedCurrentFolderItems.filter(item => item.type === 'bookmark');
+
+            const newData = [...otherItems, ...sortedFolders, ...sortedBookmarks];
+            
+            saveBookmarksData(newData); 
+        }
+        
+        function deleteSelectedItems() { 
+            if (currentMode === 'tiny') return;
+            const selectedIds = Array.from(document.querySelectorAll('.select-checkbox:checked')).map(cb => cb.dataset.id); 
+            if (selectedIds.length === 0) { 
+                showCustomAlert(getLangString('alert_no_items_selected')); 
+                return; 
+            } 
+            showConfirm(getLangString('confirm_delete', { count: selectedIds.length }), () => { 
+                let data = getBookmarksData(); 
+                const allData = [...data]; 
+                const getDescendantIds = (folderId) => { 
+                    let childrenIds = []; 
+                    const children = allData.filter(item => item.parentId === folderId); 
+                    for (const child of children) { 
+                        childrenIds.push(child.id); 
+                        if (child.type === 'folder') { 
+                            childrenIds = childrenIds.concat(getDescendantIds(child.id)); 
+                        } 
+                    } 
+                    return childrenIds; 
+                }; 
+                const idsToDelete = new Set(selectedIds); 
+                selectedIds.forEach(id => { 
+                    if (id.startsWith('f_')) { 
+                        getDescendantIds(id).forEach(childId => idsToDelete.add(childId)); 
+                    } 
+                }); 
+                const newData = data.filter(item => !idsToDelete.has(item.id)); 
+                saveBookmarksData(newData); 
+                toggleDeleteMode(); 
+                renderAll(); 
+            }); 
+        }
+        
+        function resetData() { 
+            showConfirm(getLangString('confirm_reset'), () => { 
+                localStorage.removeItem(DATA_STORAGE_KEY); 
+                localStorage.removeItem(ACCENT_COLOR_STORAGE_KEY); 
+                localStorage.removeItem(FIRST_VISIT_KEY); 
+                location.reload(); 
+            }); 
+        }
+
+        // --- カラーピッカー関連の関数 ---
+
+        function setAccentColor(color) {
+            const hoverColor = darkenHexColor(color, 15); 
+            document.documentElement.style.setProperty('--primary-color', color);
+            document.documentElement.style.setProperty('--primary-hover-color', hoverColor);
+            localStorage.setItem(ACCENT_COLOR_STORAGE_KEY, color);
+            
+            const hiddenInput = document.getElementById('accent-color-hidden-input');
+            if (hiddenInput) hiddenInput.value = color;
+        }
+
+        function loadAccentColor() {
+            const savedColor = localStorage.getItem(ACCENT_COLOR_STORAGE_KEY) || DEFAULT_ACCENT_COLOR;
+            setAccentColor(savedColor);
+            return savedColor;
+        }
 
         function initializeColorPicker(prefix = '') { 
             const redSlider = document.getElementById(prefix + 'red-slider'); 
             const greenSlider = document.getElementById(prefix + 'green-slider'); 
             const blueSlider = document.getElementById(prefix + 'blue-slider'); 
             const colorPreview = document.getElementById(prefix + 'color-preview'); 
-            const hiddenInput = document.getElementById(prefix + 'folder-color-hidden-input') || document.getElementById(prefix + 'color-hidden-input'); // フォルダ/アクセント用
+            
+            const isAccent = prefix === 'accent-' || prefix === 'tutorial-';
+            const hiddenInput = document.getElementById(prefix + 'folder-color-hidden-input') || document.getElementById(prefix + 'accent-color-hidden-input');
+            
             if (!redSlider || !hiddenInput) return; 
             
             const toHex = (c) => ('0' + parseInt(c).toString(16)).slice(-2); 
@@ -1234,8 +1463,7 @@
                 if(colorPreview) colorPreview.style.backgroundColor = hexColor; 
                 hiddenInput.value = hexColor; 
                 
-                // アクセントカラーの場合、CSS変数とlocalStorageを更新
-                if (prefix === 'accent-') {
+                if (isAccent) {
                     setAccentColor(hexColor);
                 }
             } 
@@ -1246,25 +1474,131 @@
         function resetColorPicker(hexColor = DEFAULT_ACCENT_COLOR, prefix = '') { 
             const rgb = hexToRgb(hexColor);
             
-            document.getElementById(prefix + 'red-slider').value = rgb.r; 
-            document.getElementById(prefix + 'green-slider').value = rgb.g; 
-            document.getElementById(prefix + 'blue-slider').value = rgb.b; 
+            const redSlider = document.getElementById(prefix + 'red-slider');
+            const greenSlider = document.getElementById(prefix + 'green-slider');
+            const blueSlider = document.getElementById(prefix + 'blue-slider');
+
+            if (!redSlider) return;
+
+            redSlider.value = rgb.r; 
+            greenSlider.value = rgb.g; 
+            blueSlider.value = rgb.b; 
             
             const colorPreview = document.getElementById(prefix + 'color-preview');
             if(colorPreview) colorPreview.style.backgroundColor = hexColor; 
             
-            const hiddenInput = document.getElementById(prefix + 'folder-color-hidden-input') || document.getElementById(prefix + 'color-hidden-input');
+            const hiddenInput = document.getElementById(prefix + 'folder-color-hidden-input') || document.getElementById(prefix + 'accent-color-hidden-input');
             if (hiddenInput) {
                  hiddenInput.value = hexColor;
-                 // アクセントカラーのリセットの場合は、CSS変数も更新
-                 if (prefix === 'accent-') {
+                 if (prefix === 'accent-' || prefix === 'tutorial-') {
                     setAccentColor(hexColor);
                  }
             }
         }
-
-        // --- イベントリスナーの初期化 ---
         
+        // --- チュートリアル関連の関数 ---
+        
+        function updateTutorialStep() {
+            document.querySelectorAll('.tutorial-step').forEach((step, index) => {
+                step.classList.toggle('active', index + 1 === currentTutorialStep);
+            });
+            document.getElementById('tutorial-step-title').textContent = getLangString('welcome_title') + ` (${currentTutorialStep}/${totalTutorialSteps})`;
+
+            // ステップ1: 言語
+            if (currentTutorialStep === 1) {
+                // 言語選択に合わせて挨拶を更新
+                document.getElementById('tutorial-greeting').textContent = getLangString('hello');
+            }
+            // ステップ3: 色
+            if (currentTutorialStep === 3) {
+                 // 現在のアクセントカラーをチュートリアルピッカーに設定
+                const currentColor = localStorage.getItem(ACCENT_COLOR_STORAGE_KEY) || DEFAULT_ACCENT_COLOR;
+                resetColorPicker(currentColor, 'tutorial-');
+            }
+        }
+
+        function showTutorialModal() {
+            const isFirstVisit = !localStorage.getItem(FIRST_VISIT_KEY);
+
+            if (isFirstVisit) {
+                currentTutorialStep = 1;
+                // 初期言語をブラウザ設定またはデフォルトに設定
+                const savedLang = localStorage.getItem(LANGUAGE_STORAGE_KEY) || (['ja', 'en', 'ko', 'zh'].includes(navigator.language.split('-')[0]) ? navigator.language.split('-')[0] : 'en'); 
+                currentLanguage = savedLang;
+                const tutorialLangSelect = document.getElementById('tutorial-language-select');
+                if (tutorialLangSelect) tutorialLangSelect.value = savedLang;
+                
+                // チュートリアル専用のカラーピッカーを初期化
+                initializeColorPicker('tutorial-');
+
+                updateTutorialStep();
+                showModal('tutorial-modal');
+            }
+        }
+
+        function nextTutorialStep() {
+            // ステップ1から2へ進む際に、選択された言語を一時的に適用
+            if (currentTutorialStep === 1) {
+                 const selectedLang = document.getElementById('tutorial-language-select').value;
+                 currentLanguage = selectedLang;
+                 applyTranslations(); // テキストの更新とUltimate機能の表示/非表示を適用
+            }
+
+            if (currentTutorialStep < totalTutorialSteps) {
+                currentTutorialStep++;
+                updateTutorialStep();
+            }
+        }
+
+        function prevTutorialStep() {
+            if (currentTutorialStep > 1) {
+                currentTutorialStep--;
+                updateTutorialStep();
+            }
+        }
+        
+        function finishTutorial() {
+            // アクセントカラーを最終的に設定
+            const finalColor = document.getElementById('tutorial-accent-color-hidden-input').value;
+            setAccentColor(finalColor);
+
+            // 最終言語を設定
+            const finalLang = document.getElementById('tutorial-language-select').value;
+            setCurrentLanguage(finalLang); // localStorageとcurrentLanguageを更新し、全体に適用
+
+            // 初回訪問フラグを設定
+            localStorage.setItem(FIRST_VISIT_KEY, 'false'); 
+            
+            // モーダルを閉じて、メイン画面へ
+            closeModal('tutorial-modal');
+        }
+
+        // --- 初期化ロジック ---
+        
+        function initializeMode() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const modeParam = urlParams.get('mode');
+            currentMode = (modeParam && modeParam.toLowerCase() === 'tiny') ? 'tiny' : 'ultimate';
+            document.body.dataset.mode = currentMode;
+            
+            if (currentMode === 'tiny') {
+                 document.body.classList.add('tiny-mode');
+            }
+        }
+
+        function initializeSettings() {
+             getBookmarksData(); 
+             loadAccentColor(); 
+             const savedLang = localStorage.getItem(LANGUAGE_STORAGE_KEY) || (['ja', 'en', 'ko', 'zh'].includes(navigator.language.split('-')[0]) ? navigator.language.split('-')[0] : 'en'); 
+             setCurrentLanguage(savedLang); 
+        }
+        
+        function initializeColorPickers() {
+             initializeColorPicker(''); 
+             initializeColorPicker('edit-'); 
+             initializeColorPicker('accent-'); 
+        }
+
         function initializeEventListeners() { 
             // グローバルなクリックイベントでメニューを閉じる
             window.addEventListener('click', (event) => { 
@@ -1274,7 +1608,7 @@
                     !event.target.closest('#item-menu')) {
                     hideItemMenu();
                 }
-                if (event.target.classList.contains('modal')) { 
+                if (event.target.classList.contains('modal') && event.target.id !== 'tutorial-modal') { 
                     event.target.style.display = "none"; 
                 } 
                 const addMenu = document.getElementById('add-menu'); 
@@ -1283,128 +1617,76 @@
                 } 
             }); 
 
-            // --- アドレスバー関連のリスナーを追加 ---
+            // --- アドレスバー関連のリスナー ---
             const urlInput = document.getElementById('url-input');
             const goButton = document.getElementById('go-button');
+            if (goButton) goButton.addEventListener('click', () => { 
+                let url = urlInput.value.trim(); 
+                if (!url) return; 
+                if (!url.match(/^https?:\/\//) && url.includes('.')) { url = 'https://' + url; } 
+                else if (!url.match(/^https?:\/\//)) { url = 'https://www.google.com/search?q=' + encodeURIComponent(url); } 
+                window.open(url, '_blank'); 
+            });
+            if (urlInput) urlInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); goButton.click(); }
+            });
             
-            function openUrl() {
-                let url = urlInput.value.trim();
-                if (!url) return;
-
-                // 簡易的なURLチェックとGoogle検索へのフォールバック
-                if (!url.match(/^https?:\/\//) && url.includes('.')) {
-                    url = 'https://' + url;
-                } else if (!url.match(/^https?:\/\//)) {
-                    // URLとして認識されない場合はGoogle検索
-                    url = 'https://www.google.com/search?q=' + encodeURIComponent(url);
-                }
-                
-                // 新しいタブで開く
-                window.open(url, '_blank');
+            // --- Ultimateモードのリスナー ---
+            if (currentMode === 'ultimate') {
+                document.getElementById('add-button').addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('add-menu').classList.toggle('expanded'); }); 
+                document.getElementById('add-bookmark-option').addEventListener('click', () => { document.getElementById('add-menu').classList.remove('expanded'); showModal('bookmark-modal'); }); 
+                document.getElementById('add-folder-option').addEventListener('click', () => { document.getElementById('add-menu').classList.remove('expanded'); resetColorPicker(DEFAULT_ACCENT_COLOR, ''); showModal('folder-modal'); }); 
+                document.getElementById('reset-folder-color').addEventListener('click', (e) => { e.preventDefault(); resetColorPicker(DEFAULT_ACCENT_COLOR, ''); });
+                document.getElementById('reset-edit-folder-color').addEventListener('click', (e) => { e.preventDefault(); resetColorPicker(DEFAULT_ACCENT_COLOR, 'edit-'); });
+                document.getElementById('menu-edit').addEventListener('click', () => { hideItemMenu(); showEditModal(document.getElementById('item-menu').dataset.itemId); });
+                document.getElementById('menu-move').addEventListener('click', () => { hideItemMenu(); showMoveModal(document.getElementById('item-menu').dataset.itemId); });
+                document.getElementById('delete-toggle').addEventListener('click', toggleDeleteMode); 
+                document.getElementById('sort-toggle').addEventListener('click', toggleSortMode); 
+                document.getElementById('confirm-delete-button').addEventListener('click', deleteSelectedItems); 
+                document.getElementById('settings-button').addEventListener('click', () => { resetColorPicker(loadAccentColor(), 'accent-'); showModal('settings-modal'); }); 
+                document.getElementById('close-settings').addEventListener('click', () => closeModal('settings-modal')); 
+                document.getElementById('language-select').addEventListener('change', (e) => setCurrentLanguage(e.target.value)); 
+                document.getElementById('reset-data-button').addEventListener('click', resetData); 
+                document.getElementById('reset-accent-color').addEventListener('click', (e) => { e.preventDefault(); resetColorPicker(DEFAULT_ACCENT_COLOR, 'accent-'); });
+                document.getElementById('accent-color-hidden-input').addEventListener('change', (e) => setAccentColor(e.target.value));
+                document.getElementById('save-bookmark').addEventListener('click', saveBookmark); 
+                document.getElementById('cancel-bookmark').addEventListener('click', () => closeModal('bookmark-modal')); 
+                document.getElementById('save-folder').addEventListener('click', saveFolder); 
+                document.getElementById('cancel-folder').addEventListener('click', () => closeModal('folder-modal')); 
+                document.getElementById('save-edit').addEventListener('click', saveEdit); 
+                document.getElementById('cancel-edit').addEventListener('click', () => closeModal('edit-modal')); 
+                document.getElementById('cancel-move').addEventListener('click', () => closeModal('move-modal'));
             }
 
-            goButton.addEventListener('click', openUrl);
-            urlInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    openUrl();
-                }
+            // --- チュートリアルボタンのリスナー ---
+            document.getElementById('tutorial-language-select').addEventListener('change', (e) => {
+                currentLanguage = e.target.value;
+                document.getElementById('tutorial-greeting').textContent = getLangString('hello');
             });
-            // --- アドレスバー関連のリスナー追加ここまで ---
-            
-            document.getElementById('add-button').addEventListener('click', (e) => { 
-                e.stopPropagation(); 
-                document.getElementById('add-menu').classList.toggle('expanded'); 
-            }); 
-            
-            document.getElementById('add-bookmark-option').addEventListener('click', () => { 
-                document.getElementById('add-menu').classList.remove('expanded'); 
-                showModal('bookmark-modal'); 
-            }); 
-            
-            document.getElementById('add-folder-option').addEventListener('click', () => { 
-                document.getElementById('add-menu').classList.remove('expanded'); 
-                resetColorPicker(DEFAULT_ACCENT_COLOR, ''); // フォルダのデフォルト色
-                showModal('folder-modal'); 
-            }); 
-
-            document.getElementById('reset-folder-color').addEventListener('click', (e) => {
-                e.preventDefault();
-                resetColorPicker(DEFAULT_ACCENT_COLOR, ''); 
-            });
-
-            document.getElementById('reset-edit-folder-color').addEventListener('click', (e) => {
-                e.preventDefault();
-                resetColorPicker(DEFAULT_ACCENT_COLOR, 'edit-'); 
-            });
-            
-            // アイテムメニュー内のオプション
-            document.getElementById('menu-edit').addEventListener('click', () => {
-                const itemId = document.getElementById('item-menu').dataset.itemId;
-                hideItemMenu();
-                showEditModal(itemId);
-            });
-            document.getElementById('menu-move').addEventListener('click', () => {
-                const itemId = document.getElementById('item-menu').dataset.itemId;
-                hideItemMenu();
-                showMoveModal(itemId);
-            });
-
-
-            document.getElementById('delete-toggle').addEventListener('click', toggleDeleteMode); 
-            document.getElementById('sort-toggle').addEventListener('click', toggleSortMode); 
-            document.getElementById('confirm-delete-button').addEventListener('click', deleteSelectedItems); 
-            
-            // ★設定ボタンのリスナーを更新★
-            document.getElementById('settings-button').addEventListener('click', () => {
-                 const savedColor = loadAccentColor(); // 現在のアクセントカラーを再取得・適用
-                 resetColorPicker(savedColor, 'accent-'); // スライダーを現在の色で初期化
-                 showModal('settings-modal');
-            }); 
-            document.getElementById('close-settings').addEventListener('click', () => closeModal('settings-modal')); 
-            document.getElementById('language-select').addEventListener('change', (e) => setCurrentLanguage(e.target.value)); 
-            document.getElementById('reset-data-button').addEventListener('click', resetData); 
-            
-            // ★アクセントカラーリセットボタンのリスナーを追加★
-            document.getElementById('reset-accent-color').addEventListener('click', (e) => {
-                e.preventDefault();
-                resetColorPicker(DEFAULT_ACCENT_COLOR, 'accent-');
-            });
-            // ★アクセントカラー入力フィールドの変更を監視し、アクセントカラーを更新（initializeColorPicker内で処理済みだが、念のためhidden inputのchangeイベントにも対応）★
-            document.getElementById('accent-color-hidden-input').addEventListener('change', (e) => {
-                setAccentColor(e.target.value);
-            });
-
-
-            document.getElementById('save-bookmark').addEventListener('click', saveBookmark); 
-            document.getElementById('cancel-bookmark').addEventListener('click', () => closeModal('bookmark-modal')); 
-            document.getElementById('save-folder').addEventListener('click', saveFolder); 
-            document.getElementById('cancel-folder').addEventListener('click', () => closeModal('folder-modal')); 
-            
-            document.getElementById('save-edit').addEventListener('click', saveEdit); 
-            document.getElementById('cancel-edit').addEventListener('click', () => closeModal('edit-modal')); 
-            
-            document.getElementById('cancel-move').addEventListener('click', () => closeModal('move-modal'));
-            
-            document.getElementById('bookmark-url-input').addEventListener('keydown', e => e.key === 'Enter' && saveBookmark()); 
-            document.getElementById('folder-name-input').addEventListener('keydown', e => e.key === 'Enter' && saveFolder());
-            document.getElementById('edit-bookmark-url-input').addEventListener('keydown', e => e.key === 'Enter' && saveEdit()); 
-            document.getElementById('edit-folder-name-input').addEventListener('keydown', e => e.key === 'Enter' && saveEdit());
+            document.getElementById('next-to-usage').addEventListener('click', nextTutorialStep);
+            document.getElementById('next-to-color').addEventListener('click', nextTutorialStep);
+            document.getElementById('prev-to-language').addEventListener('click', prevTutorialStep);
+            document.getElementById('prev-to-usage').addEventListener('click', prevTutorialStep);
+            document.getElementById('reset-tutorial-color').addEventListener('click', (e) => { e.preventDefault(); resetColorPicker(DEFAULT_ACCENT_COLOR, 'tutorial-'); });
+            document.getElementById('close-tutorial').addEventListener('click', finishTutorial);
         }
         
         function init() { 
-            getBookmarksData(); 
+            initializeMode();
 
-            loadAccentColor(); 
-
-            const savedLang = localStorage.getItem(LANGUAGE_STORAGE_KEY) || (['ja', 'en', 'ko', 'zh'].includes(navigator.language.split('-')[0]) ? navigator.language.split('-')[0] : 'en'); 
-            setCurrentLanguage(savedLang); 
+            // 初回訪問の確認
+            if (localStorage.getItem(FIRST_VISIT_KEY)) {
+                // 初回訪問ではない場合: 通常の初期化
+                initializeSettings(); 
+                initializeColorPickers(); 
+                initializeEventListeners(); 
+            } else {
+                // 初回訪問の場合: チュートリアル前の最小限の初期化
+                loadAccentColor(); 
+                initializeEventListeners(); // チュートリアルボタンのリスナーを先に設定
+            }
             
-            initializeColorPicker(''); 
-            initializeColorPicker('edit-'); 
-            initializeColorPicker('accent-'); // ★アクセントカラー用のカラーピッカーも初期化★
-            
-            initializeEventListeners(); 
+            showTutorialModal(); // 初回訪問時のみ表示される
         }
         
         init();
