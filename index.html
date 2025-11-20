@@ -7,7 +7,6 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
-        /* ... (前回のCSSは省略、変更なし) ... */
         :root {
             --bg-color: #f4f7f8;
             --text-color: #333;
@@ -466,21 +465,21 @@
             pointer-events: none;
         }
         
-        /* ★Tinyモードの修正 (アドレスバーと設定ボタンのみ)★ */
+        /* ★TinyモードのCSS修正 (設定ボタンのみ残すため)★ */
         .tiny-mode #breadcrumbs,
-        .tiny-mode #delete-toggle,
-        .tiny-mode #sort-toggle,
-        .tiny-mode #add-button, /* 追加ボタンも非表示 */
-        .tiny-mode #confirm-delete-button,
         .tiny-mode #add-menu,
-        .tiny-mode .bookmark-item .edit-button,
-        .tiny-mode #bookmarks-container { 
+        .tiny-mode #bookmarks-container,
+        .tiny-mode .bookmark-item .edit-button { 
             display: none !important; 
         }
+        /* header-right内の不要なボタンを明示的に非表示にする */
+        .tiny-mode #confirm-delete-button,
+        .tiny-mode #delete-toggle,
+        .tiny-mode #sort-toggle,
+        .tiny-mode #add-button { 
+             display: none !important;
+        }
         
-        /* Tinyモードでsettings-buttonを表示維持するため、header-rightはdisplay: flexのまま */
-        
-        /* チュートリアルステップのスタイル */
         .tutorial-step {
             display: none;
         }
@@ -508,7 +507,7 @@
             <button id="add-button" class="icon-button" data-lang-title="add_title">
                 <span class="material-icons">add</span>
             </button>
-            <!-- settings-button のみ Tiny モードで表示を維持 -->
+             <!-- 設定ボタン -->
              <button id="settings-button" class="icon-button" data-lang-title="settings_title">
                 <span class="material-icons">settings</span>
             </button>
@@ -697,7 +696,7 @@
         </div>
     </div>
 
-    <!-- ★チュートリアルモーダルを修正★ -->
+    <!-- ★チュートリアルモーダル★ -->
     <div id="tutorial-modal" class="modal">
         <div class="modal-content">
             <h2 id="tutorial-step-title" data-lang-key="welcome_title">ようこそ！</h2>
@@ -1572,7 +1571,20 @@
                 if (e.key === 'Enter') { e.preventDefault(); goButton.click(); }
             });
             
+            // ★ここから設定関連のリスナーをUltimateブロックの外に出します★
+            document.getElementById('settings-button').addEventListener('click', () => { 
+                resetColorPicker(loadAccentColor(), 'accent-'); 
+                showModal('settings-modal'); 
+            }); 
+            document.getElementById('close-settings').addEventListener('click', () => closeModal('settings-modal')); 
+            document.getElementById('language-select').addEventListener('change', (e) => setCurrentLanguage(e.target.value)); 
+            document.getElementById('reset-data-button').addEventListener('click', resetData); 
+            document.getElementById('reset-accent-color').addEventListener('click', (e) => { e.preventDefault(); resetColorPicker(DEFAULT_ACCENT_COLOR, 'accent-'); });
+            document.getElementById('accent-color-hidden-input').addEventListener('change', (e) => setAccentColor(e.target.value));
+            // ★設定関連のリスナーはここまで★
+
             if (currentMode === 'ultimate') {
+                // Ultimateモード専用のリスナー
                 document.getElementById('add-button').addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('add-menu').classList.toggle('expanded'); }); 
                 document.getElementById('add-bookmark-option').addEventListener('click', () => { document.getElementById('add-menu').classList.remove('expanded'); showModal('bookmark-modal'); }); 
                 document.getElementById('add-folder-option').addEventListener('click', () => { document.getElementById('add-menu').classList.remove('expanded'); resetColorPicker(DEFAULT_ACCENT_COLOR, ''); showModal('folder-modal'); }); 
@@ -1583,12 +1595,6 @@
                 document.getElementById('delete-toggle').addEventListener('click', toggleDeleteMode); 
                 document.getElementById('sort-toggle').addEventListener('click', toggleSortMode); 
                 document.getElementById('confirm-delete-button').addEventListener('click', deleteSelectedItems); 
-                document.getElementById('settings-button').addEventListener('click', () => { resetColorPicker(loadAccentColor(), 'accent-'); showModal('settings-modal'); }); 
-                document.getElementById('close-settings').addEventListener('click', () => closeModal('settings-modal')); 
-                document.getElementById('language-select').addEventListener('change', (e) => setCurrentLanguage(e.target.value)); 
-                document.getElementById('reset-data-button').addEventListener('click', resetData); 
-                document.getElementById('reset-accent-color').addEventListener('click', (e) => { e.preventDefault(); resetColorPicker(DEFAULT_ACCENT_COLOR, 'accent-'); });
-                document.getElementById('accent-color-hidden-input').addEventListener('change', (e) => setAccentColor(e.target.value));
                 document.getElementById('save-bookmark').addEventListener('click', saveBookmark); 
                 document.getElementById('cancel-bookmark').addEventListener('click', () => closeModal('bookmark-modal')); 
                 document.getElementById('save-folder').addEventListener('click', saveFolder); 
